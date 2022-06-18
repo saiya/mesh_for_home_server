@@ -93,9 +93,7 @@ func (c *Challenger) Answer(challenge *Challenge) (Answer, error) {
 		NotBefore(now).
 		Expiration(now.Add(challengeExpire)).
 		Build()
-	if err != nil {
-		return "", fmt.Errorf("failed to generate JWT: %w", err)
-	}
+	neverFail(err)
 
 	jws, err := jwt.Sign(token, jwt.WithKey(c.privKey.Algorithm(), c.privKey))
 	if err != nil {

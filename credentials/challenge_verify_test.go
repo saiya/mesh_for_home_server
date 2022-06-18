@@ -8,10 +8,7 @@ import (
 )
 
 func TestSuccess(t *testing.T) {
-	keyPair, err := NewSignKeyPair()
-	if !assert.NoError(t, err) {
-		return
-	}
+	keyPair := NewSignKeyPair()
 
 	nodeID := config.NodeID("test-node")
 	challenger, err := NewChallenger(nodeID, string(keyPair.PrivateKey))

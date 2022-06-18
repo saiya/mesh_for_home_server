@@ -2,7 +2,6 @@ package credentials
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 )
 
@@ -12,9 +11,7 @@ func NewNonce(letters string) string {
 
 	for i := 0; i < challengeBytes; i++ {
 		n, err := rand.Int(rand.Reader, lettersLen)
-		if err != nil {
-			panic(fmt.Errorf("failed to generate rand: %w", err))
-		}
+		neverFail(err)
 		result[i] = challengeLetters[n.Int64()]
 	}
 	return string(result)
