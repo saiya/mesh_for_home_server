@@ -42,20 +42,23 @@ func NewKeyPair(pubOps jwk.KeyOperationList, privOps jwk.KeyOperationList) (KeyP
 		return KeyPair{}, fmt.Errorf("failed to convert to JWK: %w", err)
 	}
 
-	err = pubKey.Set(jwk.KeyOpsKey, pubOps)
-	if err != nil {
-		return KeyPair{}, fmt.Errorf("failed to set JWK property: %w", err)
-	}
-	err = privKey.Set(jwk.KeyOpsKey, privOps)
-	if err != nil {
-		return KeyPair{}, fmt.Errorf("failed to set JWK property: %w", err)
-	}
-	for _, k := range []jwk.Key{pubKey, privKey} {
-		err = k.Set(jwk.AlgorithmKey, alg)
+	for k, v := range map[string]interface{}{
+		jwk.KeyOpsKey:    pubOps,
+		jwk.AlgorithmKey: alg,
+		jwk.KeyIDKey:     kid,
+	} {
+		err = pubKey.Set(k, v)
 		if err != nil {
 			return KeyPair{}, fmt.Errorf("failed to set JWK property: %w", err)
 		}
-		err = k.Set(jwk.KeyIDKey, kid)
+	}
+
+	for k, v := range map[string]interface{}{
+		jwk.KeyOpsKey:    privOps,
+		jwk.AlgorithmKey: alg,
+		jwk.KeyIDKey:     kid,
+	} {
+		err = privKey.Set(k, v)
 		if err != nil {
 			return KeyPair{}, fmt.Errorf("failed to set JWK property: %w", err)
 		}
