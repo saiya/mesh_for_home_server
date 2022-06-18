@@ -1,0 +1,22 @@
+# see: https://golangci-lint.run/usage/configuration/
+
+run:
+  tests: true
+
+issues:
+  exclude-use-default: false
+
+linters:
+  enable:
+    - revive
+    - godox
+    - goimports
+    - gosec
+    - noctx
+    - nolintlint
+    - prealloc
+    - misspell
+
+issues:
+  exclude:
+    - "exported (type|method|function) (.+) should have comment or be unexported"
