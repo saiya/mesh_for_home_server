@@ -11,8 +11,10 @@ require (
 )
 
 require (
+	github.com/Songmu/gocredits v0.2.0
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
+	github.com/golang/mock v1.6.0
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.2 // indirect
