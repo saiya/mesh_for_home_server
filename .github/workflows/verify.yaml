@@ -15,15 +15,15 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.46.2
       - name: generate
         shell: bash
         run: |
           go mod download
           make generate
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.46.2
       - name: Other Lint
         shell: bash
         run: |
