@@ -17,8 +17,8 @@ const clockSkewMax = time.Second * 10
 const challengeExpire = time.Second * 5
 
 type Challenge struct {
-	nodeID config.NodeID
-	Nonce  string `json:"nonce"`
+	NodeID config.NodeID `json:"node_id"`
+	Nonce  string        `json:"nonce"`
 }
 
 type Answer string
@@ -55,9 +55,7 @@ func NewVerifier(jwkStrs []string) (*Verifier, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse verifier JWK: %w", err)
 		}
-		if err = verifier.pubKeys.AddKey(pubKey); err != nil {
-			return nil, fmt.Errorf("failed to add JWK into set: %w", err)
-		}
+		neverFail(verifier.pubKeys.AddKey(pubKey))
 	}
 
 	return &verifier, nil
@@ -79,13 +77,16 @@ func parseJwk(jwkStr string, use jwk.KeyUsageType, ops jwk.KeyOperation) (jwk.Ke
 
 func (v *Verifier) NewChallenge(nodeID config.NodeID) (*Challenge, error) {
 	return &Challenge{
-		nodeID: nodeID,
-		Nonce:  NewNonce(challengeLetters),
+		NodeID: nodeID,
+		Nonce:  SecureRandomString(challengeBytes, challengeLetters),
 	}, nil
 }
 
-func (c *Challenger) Answer(challenge *Challenge) (Answer, error) {
-	now := time.Now()
+func (c *Challenger) Answer(challenge *Challenge, now time.Time) (Answer, error) {
+	if challenge.NodeID != c.nodeID {
+		return "", fmt.Errorf("Node ID not match")
+	}
+
 	token, err := jwt.NewBuilder().
 		JwtID(challenge.Nonce).
 		Issuer(string(c.nodeID)).
@@ -96,22 +97,21 @@ func (c *Challenger) Answer(challenge *Challenge) (Answer, error) {
 	neverFail(err)
 
 	jws, err := jwt.Sign(token, jwt.WithKey(c.privKey.Algorithm(), c.privKey))
-	if err != nil {
-		return "", fmt.Errorf("failed to sign JWT: %w", err)
-	}
+	neverFail(err)
 	return Answer(jws), nil
 }
 
-func (v *Verifier) Verify(challenge *Challenge, answer Answer) error {
+func (v *Verifier) Verify(challenge *Challenge, answer Answer, now time.Time) error {
 	_, err := jwt.Parse(
 		[]byte(answer),
 		jwt.WithKeySet(v.pubKeys),
-		jwt.WithIssuer(string(challenge.nodeID)),
+		jwt.WithIssuer(string(challenge.NodeID)),
 		jwt.WithJwtID(challenge.Nonce),
 		jwt.WithAcceptableSkew(clockSkewMax),
+		jwt.WithClock(jwt.ClockFunc(func() time.Time { return now })),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to parse JWS: %w", err)
+		return fmt.Errorf("invalid answer (JWS parse/verification not passed): %w", err)
 	}
 	return nil
 }

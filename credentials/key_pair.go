@@ -24,7 +24,7 @@ func NewSignKeyPair() KeyPair {
 
 func NewKeyPair(pubOps jwk.KeyOperationList, privOps jwk.KeyOperationList) KeyPair {
 	alg := "EdDSA"
-	kid := "key-" + NewNonce(kidRandomChars)
+	kid := "key-" + SecureRandomString(challengeBytes, kidRandomChars)
 
 	rawPubKey, rawPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	neverFail(err)

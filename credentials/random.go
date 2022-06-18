@@ -5,11 +5,11 @@ import (
 	"math/big"
 )
 
-func NewNonce(letters string) string {
+func SecureRandomString(length int, letters string) string {
 	lettersLen := big.NewInt(int64(len(letters)))
-	result := make([]byte, challengeBytes)
+	result := make([]byte, length)
 
-	for i := 0; i < challengeBytes; i++ {
+	for i := 0; i < length; i++ {
 		n, err := rand.Int(rand.Reader, lettersLen)
 		neverFail(err)
 		result[i] = challengeLetters[n.Int64()]
