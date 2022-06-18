@@ -6,4 +6,5 @@ package main
 import (
 	_ "github.com/Songmu/gocredits/cmd/gocredits"
 	_ "github.com/golang/mock/gomock"
+	_ "github.com/golang/mock/mockgen"
 )

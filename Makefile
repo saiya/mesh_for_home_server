@@ -43,7 +43,7 @@ $(release_dir):
 	mkdir $(release_dir)
 
 $(release_dir)/CREDITS: $(go_module_files) | $(release_dir)
-	go get github.com/Songmu/gocredits/cmd/gocredits
+	go install github.com/Songmu/gocredits/cmd/gocredits
 	rm -f $@
 	gocredits -skip-missing . > $@
 
