@@ -9,5 +9,5 @@ import (
 type Message = *generated.PeerMessage
 
 func MsgLogString(msg Message) string {
-	return reflect.TypeOf(msg).String()
+	return reflect.TypeOf(msg.Message).String()
 }

@@ -23,17 +23,15 @@ func hostnameMatcher(c *config.HTTPEgressConfig) func(string) int64 {
 		return func(givenHostname string) int64 {
 			if regex.MatchString(normalizeHostname(givenHostname)) {
 				return int64(len(host))
-			} else {
-				return -1
 			}
+			return -1
 		}
 	} else {
 		return func(givenHostname string) int64 {
 			if normalizeHostname(givenHostname) == host {
 				return int64(len(host))
-			} else {
-				return -1
 			}
+			return -1
 		}
 	}
 }

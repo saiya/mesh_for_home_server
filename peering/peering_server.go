@@ -108,7 +108,7 @@ func (s *peeringServer) String() string {
 }
 
 func (s *peeringServer) Stat() interfaces.PeeringServerStat {
-	return s.stat
+	return s.stat.Clone()
 }
 
 func (s *peeringServer) Peer(conn generated.Peering_PeerServer) error {
@@ -128,7 +128,7 @@ func (s *peeringServer) Peer(conn generated.Peering_PeerServer) error {
 	}
 	atomic.AddUint64(&s.stat.HandshakeSucceeded, 1)
 
-	sinkRegistration := s.router.RegisterSink(handshakeResult.peerNodeID, func(parentCtx context.Context, msg interfaces.Message) error {
+	deregisterShink := s.router.RegisterSink(handshakeResult.peerNodeID, func(parentCtx context.Context, msg interfaces.Message) error {
 		ctx := withConnectionLogAttributes(parentCtx)
 		logger.GetFrom(ctx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
 		return conn.Send(
@@ -139,7 +139,7 @@ func (s *peeringServer) Peer(conn generated.Peering_PeerServer) error {
 			},
 		)
 	})
-	defer sinkRegistration.Close()
+	defer deregisterShink()
 
 	go func() {
 		for {
@@ -160,7 +160,7 @@ func (s *peeringServer) Peer(conn generated.Peering_PeerServer) error {
 			}
 		}
 	}()
-	_, _ = <-ctx.Done()
+	<-ctx.Done()
 	return nil
 }
 

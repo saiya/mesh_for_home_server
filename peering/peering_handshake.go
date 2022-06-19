@@ -30,7 +30,7 @@ func (s *peeringServer) doHandshake(ctx context.Context, conn generated.Peering_
 	err = conn.Send(&generated.PeerServerMessage{
 		Message: &generated.PeerServerMessage_ServerHello{
 			ServerHello: &generated.ServerHello{
-				NodeId: string(s.nodeID),
+				NodeId: string(s.router.NodeID()),
 			},
 		},
 	})
@@ -51,7 +51,7 @@ func (s *peeringServer) doHandshake(ctx context.Context, conn generated.Peering_
 	return result, nil
 }
 
-func (c *peeringClient) doHandshake(ctx context.Context, conn generated.Peering_PeerClient) (handshakeResult, error) {
+func (c *peeringClientConnection) doHandshake(ctx context.Context, conn generated.Peering_PeerClient) (handshakeResult, error) {
 	logger.GetFrom(ctx).Debugw("Start of handshake...")
 	result := handshakeResult{}
 

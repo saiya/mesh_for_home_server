@@ -17,6 +17,13 @@ func neverFail(err error) {
 	panic(err)
 }
 
+func debugLogIfErr(ctx context.Context, err error) {
+	if err == nil {
+		return
+	}
+	logger.GetFrom(ctx).Debug(err)
+}
+
 var connectionIDGen = uint64(0)
 
 func withConnectionLogAttributes(ctx context.Context) context.Context {

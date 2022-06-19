@@ -3,28 +3,30 @@ package interfaces
 import (
 	"context"
 	"errors"
-	"io"
-	"net/http"
 
 	"github.com/saiya/mesh_for_home_server/config"
 )
 
-var ErrUnknownPeer = errors.New("Unknown peer, don't know where to deliver")
+var ErrUnknownPeer = errors.New("no route to deliver")
+var ErrPeerNoConnection = errors.New("no connection available for the peer")
+
+type RouterShink = func(context.Context, Message) error
+type RouterListener = func(ctx context.Context, from config.NodeID, msg Message) error
+type RouterUnregister = func()
 
 type Router interface {
 	// NodeID returns this node itself's ID
 	NodeID() config.NodeID
 
-	HTTP() http.RoundTripper
-
 	// Deliver transfer given message or handle that message in this node itself
-	Deliver(ctx context.Context, from config.NodeID, dest config.NodeID, msg Message) error
+	Deliver(ctx context.Context, from config.NodeID, dest config.NodeID, msg Message)
 
-	// Register message deliverer.
-	RegisterSink(dest config.NodeID, callback func(context.Context, Message) error) io.Closer
+	// RegisterSink registers message deliverery route to another node.
+	// Given destination must not equal to this node's ID.
+	RegisterSink(dest config.NodeID, callback RouterShink) RouterUnregister
 
-	// Listen regisger callback for incoming messsage.
-	// Catches all mesages that destination is this node.
+	// Listen regisgers callback for incoming messsage.
+	// Lisnter will be called for all mesages that destination is this node.
 	// All listeners called every time, should close unnesessary listener.
-	Listen(callback func(context.Context, config.NodeID, Message) error) io.Closer
+	Listen(callback RouterListener) RouterUnregister
 }

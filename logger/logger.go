@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var logger *zap.Logger
@@ -17,6 +18,7 @@ var loggerContextKey = loggerContextKeyType{}
 
 func init() {
 	cfg := zap.NewProductionConfig()
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	loglevel = &cfg.Level
 	if os.Getenv("DEBUG") != "" {
 		EnableDebugLog()
@@ -40,9 +42,8 @@ func GetFrom(ctx context.Context) *zap.SugaredLogger {
 	logger, ok := ctx.Value(loggerContextKey).(*zap.SugaredLogger)
 	if ok {
 		return logger
-	} else {
-		return Get()
 	}
+	return Get()
 }
 
 func Get() *zap.SugaredLogger {
