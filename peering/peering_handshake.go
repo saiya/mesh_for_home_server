@@ -1,22 +1,31 @@
 package peering
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/saiya/mesh_for_home_server/config"
+	"github.com/saiya/mesh_for_home_server/logger"
 	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 )
 
-func (s *peeringServer) doHandshake(conn generated.Peering_PeerServer, sm *peeringStateMachine) error {
+type handshakeResult struct {
+	peerNodeID config.NodeID
+}
+
+func (s *peeringServer) doHandshake(ctx context.Context, conn generated.Peering_PeerServer) (handshakeResult, error) {
+	logger.GetFrom(ctx).Debugw("Start of handshake...")
+	result := handshakeResult{}
+
 	helloMsg, err := conn.Recv()
 	if err != nil {
-		return fmt.Errorf("failed to receive CLIENT HELLO message: %w", err)
+		return result, fmt.Errorf("failed to receive CLIENT HELLO message: %w", err)
 	}
 	hello, ok := helloMsg.Message.(*generated.PeerClientMessage_ClientHello)
 	if !ok {
-		return fmt.Errorf("expected CLIENT HELLO message but got different message")
+		return result, fmt.Errorf("expected CLIENT HELLO message but got different message")
 	}
-	sm.SetPeerNodeID(config.NodeID(hello.ClientHello.GetNodeId()))
+	result.peerNodeID = config.NodeID(hello.ClientHello.GetNodeId())
 
 	err = conn.Send(&generated.PeerServerMessage{
 		Message: &generated.PeerServerMessage_ServerHello{
@@ -26,41 +35,46 @@ func (s *peeringServer) doHandshake(conn generated.Peering_PeerServer, sm *peeri
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to send SERVER HELLO: %w", err)
+		return result, fmt.Errorf("failed to send SERVER HELLO: %w", err)
 	}
 
 	answerMsg, err := conn.Recv()
 	if err != nil {
-		return fmt.Errorf("failed to receive HANDSHAKE DONE message: %w", err)
+		return result, fmt.Errorf("failed to receive HANDSHAKE DONE message: %w", err)
 	}
 	_, ok = answerMsg.Message.(*generated.PeerClientMessage_HandshakeDone)
 	if !ok {
-		return fmt.Errorf("expected HANDSHAKE DONE message but got different message")
+		return result, fmt.Errorf("expected HANDSHAKE DONE message but got different message")
 	}
-	return nil
+
+	logger.GetFrom(ctx).Debugw("Handshake done")
+	return result, nil
 }
 
-func (c *peeringClient) doHandshake(conn generated.Peering_PeerClient, sm *peeringStateMachine) error {
+func (c *peeringClient) doHandshake(ctx context.Context, conn generated.Peering_PeerClient) (handshakeResult, error) {
+	logger.GetFrom(ctx).Debugw("Start of handshake...")
+	result := handshakeResult{}
+
 	err := conn.Send(&generated.PeerClientMessage{
 		Message: &generated.PeerClientMessage_ClientHello{
 			ClientHello: &generated.ClientHello{
-				NodeId: string(c.nodeID),
+				NodeId: string(c.router.NodeID()),
 			},
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to send CLIENT HELLO: %w", err)
+		return result, fmt.Errorf("failed to send CLIENT HELLO: %w", err)
 	}
 
 	helloMsg, err := conn.Recv()
 	if err != nil {
-		return fmt.Errorf("failed to receive SERVER HELLO message: %w", err)
+		return result, fmt.Errorf("failed to receive SERVER HELLO message: %w", err)
 	}
 	hello, ok := helloMsg.Message.(*generated.PeerServerMessage_ServerHello)
 	if !ok {
-		return fmt.Errorf("expected SERVER HELLO message but got different message")
+		return result, fmt.Errorf("expected SERVER HELLO message but got different message")
 	}
-	sm.SetPeerNodeID(config.NodeID(hello.ServerHello.NodeId))
+	result.peerNodeID = config.NodeID(hello.ServerHello.NodeId)
 
 	err = conn.Send(&generated.PeerClientMessage{
 		Message: &generated.PeerClientMessage_HandshakeDone{
@@ -68,7 +82,9 @@ func (c *peeringClient) doHandshake(conn generated.Peering_PeerClient, sm *peeri
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to send HANDSHAKE DONE: %w", err)
+		return result, fmt.Errorf("failed to send HANDSHAKE DONE: %w", err)
 	}
-	return nil
+
+	logger.GetFrom(ctx).Debugw("Handshake done")
+	return result, nil
 }

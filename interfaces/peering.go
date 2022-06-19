@@ -2,7 +2,10 @@ package interfaces
 
 import (
 	"context"
+	"errors"
 )
+
+var ErrPeeringDown = errors.New("Peering connection not available")
 
 type PeeringServer interface {
 	String() string

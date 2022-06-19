@@ -28,12 +28,25 @@ message PeerServerMessage {
         PeerMessage peer_message = 1;
 
         ServerHello server_hello = 2;
+        PeerCloseByServer close_by_server = 3;
     }
+}
+
+enum CloseByServerReason {
+    // Connection down detected (client or network transit closed connection)
+    CONNECTION_DOWN = 0;
+    HANDSHAKE_FAILURE = 1;
+    INVALID_MESSAGE = 2;
+}
+
+message PeerCloseByServer {
+    CloseByServerReason reason = 1;
 }
 
 message PeerMessage {
     oneof message {
-        PeeringAbort abort = 1;
+        Ping ping = 2;
+        Pong pong = 3;
 
         HttpRequestStart http_request_start = 10;
         HttpRequestBody http_request_body = 11;
@@ -45,11 +58,11 @@ message PeerMessage {
     }
 }
 
-message PeeringAbort {
-    enum PeeringError {
-        HANDSHAKE_FAILURE = 0;
-        STREAM_CLOSED = 1;
-        INVALID_MESSAGE_ORDER = 2;
-    }
-    PeeringError error = 1;
+message Ping {
+    string payload = 1;
+}
+
+message Pong {
+    // Copy of Ping.payload
+    string payload = 1;
 }

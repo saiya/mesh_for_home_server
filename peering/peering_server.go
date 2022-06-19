@@ -18,7 +18,7 @@ import (
 )
 
 type peeringServer struct {
-	nodeID config.NodeID
+	router interfaces.Router
 
 	listenAddr  string
 	tcpListener net.Listener
@@ -32,9 +32,9 @@ type peeringServer struct {
 	stat interfaces.PeeringServerStat
 }
 
-func NewPeeringServer(nodeID config.NodeID, config *config.PeeringAcceptConfig) (interfaces.PeeringServer, error) {
+func NewPeeringServer(config *config.PeeringAcceptConfig, router interfaces.Router) (interfaces.PeeringServer, error) {
 	s := peeringServer{
-		nodeID:    nodeID,
+		router:    router,
 		closeWait: &sync.WaitGroup{},
 	}
 	err := newListener(config, &s)
@@ -113,37 +113,66 @@ func (s *peeringServer) Stat() interfaces.PeeringServerStat {
 
 func (s *peeringServer) Peer(conn generated.Peering_PeerServer) error {
 	atomic.AddUint64(&s.stat.PeeringConnections, 1)
-	sm := newStateMachine(
-		conn.Context(), true,
-		func(msg *generated.PeerMessage) error {
-			return conn.Send(&generated.PeerServerMessage{Message: &generated.PeerServerMessage_PeerMessage{PeerMessage: msg}})
-		},
-	)
+	ctx := withConnectionLogAttributes(conn.Context())
 
 	atomic.AddUint64(&s.stat.HandshakeAttempts, 1)
-	if err := s.doHandshake(conn, sm); err != nil {
-		sm.Abort(generated.PeeringAbort_HANDSHAKE_FAILURE, err)
+	handshakeResult, err := s.doHandshake(ctx, conn)
+	if err != nil {
+		closeByServer(ctx, conn, generated.CloseByServerReason_HANDSHAKE_FAILURE)
+		return nil
+	}
+	if handshakeResult.peerNodeID == s.router.NodeID() {
+		logger.GetFrom(ctx).Warnw("NodeID duplication: peer's nodeID equals with this server's nodeID", "node-id", s.router.NodeID())
+		closeByServer(ctx, conn, generated.CloseByServerReason_HANDSHAKE_FAILURE)
 		return nil
 	}
 	atomic.AddUint64(&s.stat.HandshakeSucceeded, 1)
 
+	sinkRegistration := s.router.RegisterSink(handshakeResult.peerNodeID, func(parentCtx context.Context, msg interfaces.Message) error {
+		ctx := withConnectionLogAttributes(parentCtx)
+		logger.GetFrom(ctx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
+		return conn.Send(
+			&generated.PeerServerMessage{
+				Message: &generated.PeerServerMessage_PeerMessage{
+					PeerMessage: msg,
+				},
+			},
+		)
+	})
+	defer sinkRegistration.Close()
+
 	go func() {
-		for sm.Alive() {
+		for {
 			packet, err := conn.Recv()
 			if err != nil {
-				sm.Abort(generated.PeeringAbort_STREAM_CLOSED, err)
+				logger.GetFrom(ctx).Infow("Recv() failed, connection closed?", "err", err)
+				closeByServer(ctx, conn, generated.CloseByServerReason_CONNECTION_DOWN)
 				break
 			}
 
 			switch msg := packet.Message.(type) {
 			case *generated.PeerClientMessage_PeerMessage:
 				atomic.AddUint64(&s.stat.PeerMessageReceived, 1)
-				sm.Update(msg.PeerMessage)
+				s.router.Deliver(ctx, handshakeResult.peerNodeID, s.router.NodeID(), msg.PeerMessage)
 			default:
-				sm.Abort(generated.PeeringAbort_INVALID_MESSAGE_ORDER, nil)
+				logger.GetFrom(ctx).Warnw("Unknown message received, closing connection")
+				closeByServer(ctx, conn, generated.CloseByServerReason_INVALID_MESSAGE)
 			}
 		}
 	}()
-	_, _ = <-sm.ctx.Done()
+	_, _ = <-ctx.Done()
 	return nil
+}
+
+func closeByServer(ctx context.Context, conn generated.Peering_PeerServer, reason generated.CloseByServerReason) {
+	err := conn.Send(
+		&generated.PeerServerMessage{
+			Message: &generated.PeerServerMessage_CloseByServer{
+				CloseByServer: &generated.PeerCloseByServer{
+					Reason: reason,
+				},
+			},
+		},
+	)
+	logger.GetFrom(ctx).Infow("Closed connection by this server", "reason", reason, "close-message-send-result", err)
 }

@@ -18,7 +18,7 @@ import (
 )
 
 type peeringClient struct {
-	nodeID config.NodeID
+	router interfaces.Router
 	addr   string
 
 	ctx       context.Context
@@ -29,12 +29,13 @@ type peeringClient struct {
 	stat interfaces.PeeringClientStat
 }
 
-func NewPeeringClient(parentCtx context.Context, nodeID config.NodeID, config *config.PeeringConnectConfig) (interfaces.PeeringClient, error) {
+func NewPeeringClient(parentCtx context.Context, config *config.PeeringConnectConfig, router interfaces.Router) (interfaces.PeeringClient, error) {
 	c := peeringClient{
-		nodeID: nodeID,
+		router: router,
 		addr:   config.Address,
 	}
 	c.ctx, c.ctxCancel = context.WithCancel(parentCtx)
+	c.ctx = logger.Wrap(c.ctx, "addr", c.addr)
 
 	err := newGRPCClient(config, &c)
 	if err != nil {
@@ -66,44 +67,53 @@ func NewPeeringClient(parentCtx context.Context, nodeID config.NodeID, config *c
 }
 
 func (c *peeringClient) peering() error {
+	ctx := c.ctx
+
 	atomic.AddUint64(&c.stat.PeeringAttempts, 1)
-	conn, err := generated.NewPeeringClient(c.gc).Peer(c.ctx)
+	conn, err := generated.NewPeeringClient(c.gc).Peer(ctx)
 	if err != nil {
 		return err
 	}
+	defer conn.CloseSend()
 	atomic.AddUint64(&c.stat.PeeringConnected, 1)
-
-	sm := newStateMachine(
-		c.ctx, false,
-		func(msg *generated.PeerMessage) error {
-			return conn.Send(&generated.PeerClientMessage{Message: &generated.PeerClientMessage_PeerMessage{PeerMessage: msg}})
-		},
-	)
+	ctx = withConnectionLogAttributes(conn.Context())
 
 	atomic.AddUint64(&c.stat.HandshakeAttempts, 1)
-	err = c.doHandshake(conn, sm)
+	handShakeResult, err := c.doHandshake(ctx, conn)
 	if err != nil {
+		logger.GetFrom(ctx)
 		return err
 	}
 	atomic.AddUint64(&c.stat.HandshakeSucceeded, 1)
 
-	for sm.Alive() {
+	sinkRegistration := c.router.RegisterSink(handShakeResult.peerNodeID, func(ctx context.Context, msg interfaces.Message) error {
+		logger.GetFrom(ctx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
+		return conn.Send(&generated.PeerClientMessage{
+			Message: &generated.PeerClientMessage_PeerMessage{
+				PeerMessage: msg,
+			},
+		})
+	})
+	defer sinkRegistration.Close()
+
+	for {
 		packet, err := conn.Recv()
 		if err != nil {
-			sm.Abort(generated.PeeringAbort_STREAM_CLOSED, err)
+			logger.GetFrom(ctx).Debugw("Recv() failed, stream closed?", "err", err)
 			return err
 		}
 
 		switch msg := packet.Message.(type) {
+		case *generated.PeerServerMessage_CloseByServer:
+			return fmt.Errorf("Stream closed by server, likely protocol error happend: %v", msg.CloseByServer.Reason)
 		case *generated.PeerServerMessage_PeerMessage:
 			atomic.AddUint64(&c.stat.PeerMessageReceived, 1)
-			sm.Update(msg.PeerMessage)
+			logger.GetFrom(ctx).Debugw("Peer message received", "peer-msg", interfaces.MsgLogString(msg.PeerMessage))
+			c.router.Deliver(ctx, handShakeResult.peerNodeID, c.router.NodeID(), msg.PeerMessage)
 		default:
-			sm.Abort(generated.PeeringAbort_INVALID_MESSAGE_ORDER, nil)
-			return fmt.Errorf("PeeringAbort_INVALID_MESSAGE_ORDER")
+			return fmt.Errorf("Unknown message received, closing connection")
 		}
 	}
-	return fmt.Errorf("Stream dead")
 }
 
 func (c *peeringClient) String() string {

@@ -7,11 +7,14 @@ import (
 	"time"
 
 	"github.com/saiya/mesh_for_home_server/config"
+	"github.com/saiya/mesh_for_home_server/logger"
 	"github.com/saiya/mesh_for_home_server/tlshelper/tlstesting"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPeering(t *testing.T) {
+	logger.EnableDebugLog()
+
 	ctx := context.Background()
 	serverTLSConfig := tlstesting.GenerateServerCert("localhost")
 	clientTLSConfig := tlstesting.EnableClientCert(serverTLSConfig)
@@ -41,7 +44,6 @@ func TestPeering(t *testing.T) {
 	isConnected := func() bool {
 		return (server.Stat().HandshakeSucceeded > 0) && (client.Stat().HandshakeSucceeded > 0)
 	}
-
 	waitUntil := time.Now().Add(time.Second * 3)
 	for time.Now().Before(waitUntil) {
 		if isConnected() {
