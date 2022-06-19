@@ -1,14 +1,23 @@
 package config
 
 type PeeringConfig struct {
-	Accept  *PerringAcceptConfig   `json:"accept"`
+	Accept  *PeeringAcceptConfig   `json:"accept"`
 	Connect []PeeringConnectConfig `json:"connect"`
 }
 
-type PerringAcceptConfig struct {
-	PublicKeyJwk []string `json:"public_key_jwk"`
+type PeeringAcceptConfig struct {
+	// (optional) "host:port" to listen (e.g. "localhost:50051", ":50051")
+	// Use random available port by default.
+	Listen string `json:"listen"`
+
+	TLS *TLSServerConfig `json:"tls"`
 }
 
 type PeeringConnectConfig struct {
-	PrivateKeyJwk string `json:"private_key_jwk"`
+	/** e.g. "localhost:50051" */
+	Address string
+
+	TLS *TLSClientConfig `json:"tls"`
+
+	ConnectionRetryIntervalSec int `json:"connection_retry_interval_sec"`
 }

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "peering/proto/generated";
+
+message ClientHello {
+    string node_id = 1;
+
+    repeated string http_hostname_matchers = 2;
+}
+
+message ServerHello {
+    string node_id = 1;
+}
+
+message HandShakeDone {}

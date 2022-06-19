@@ -5,6 +5,8 @@ go_module_files = go.mod go.sum
 go_src_files = $(shell find . -type f -name '*.go')
 build_deps = $(go_module_files) $(go_src_files) | $(release_dir)
 
+PROTOBUF_INSTALL_DIR ?= /usr
+
 VERSION_ID ?= $(shell git rev-list -1 HEAD)
 ldflags = "-X main.buildVersion=$(VERSION_ID) -X main.buildAt=$(shell date +'%s')"
 
@@ -35,6 +37,13 @@ lint: generate
 generate:
 	go get github.com/golang/mock/mockgen
 	go generate ./...
+
+# Because protoc generated files are commited into git, defined as separate task
+# Require ${PROTOBUF_INSTALL_DIR} environment variable to run it.
+# Also need to install protoc-gen-go and protoc-gen-go-grpc
+# ref: https://grpc.io/docs/languages/go/quickstart/
+grpc:
+	${PROTOBUF_INSTALL_DIR}/bin/protoc --go_out=. --go-grpc_out=require_unimplemented_servers=false:. ./peering/proto/*.proto
 
 $(release_dir).zip: $(release_dir)/README.md $(release_dir)/CREDITS $(release_dir)/mesh_for_home_server_Linux_x86_64 $(release_dir)/mesh_for_home_server_Linux_aarch64
 	zip -r $@ $(release_dir)/ -x '$(release_dir)/.gitignore'

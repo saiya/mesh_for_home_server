@@ -21,4 +21,5 @@ issues:
   exclude:
     - "G402: TLS MinVersion too low"
     - "G402: TLS InsecureSkipVerify set true"
+    - "G306: Expect WriteFile permissions to be 0600 or less"
     - "exported (type|method|function) (.+) should have comment or be unexported"

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "peering/proto/generated";
+
+import "peering/proto/common.proto";
+
+message HttpRequestStart {
+    RequestID request_id = 1;
+
+    string method = 2;
+    string hostname = 3;
+    string path = 4;
+    repeated HttpHeader headers = 5;
+}
+
+message HttpRequestBody {
+    RequestID request_id = 1;
+
+    bytes data = 2;
+}
+
+message HttpRequestEnd {
+    RequestID request_id = 1;
+}
+
+message HttpResponseStart {
+    RequestID request_id = 1;
+
+    // e.g. "200 OK"
+    string status = 2;
+    repeated HttpHeader headers = 3;
+}
+
+message HttpResponseBody {
+    RequestID request_id = 1;
+
+    bytes data = 2;
+}
+
+message HttpResponseEnd {
+    RequestID request_id = 1;
+}
+
+message HttpHeader {
+    string name = 1;
+    repeated string values = 2;
+}

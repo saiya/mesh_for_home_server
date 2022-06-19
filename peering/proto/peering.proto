@@ -1,0 +1,55 @@
+//
+// Use this to re-generate file: make grpc
+//
+syntax = "proto3";
+
+package test;
+
+option go_package = "peering/proto/generated";
+
+import "peering/proto/http.proto";
+import "peering/proto/handshake.proto";
+
+service Peering {
+    rpc Peer(stream PeerClientMessage) returns (stream PeerServerMessage);
+}
+
+message PeerClientMessage {
+    oneof message {
+        PeerMessage peer_message = 1;
+
+        ClientHello client_hello = 2;
+        HandShakeDone handshake_done = 3;
+    }
+}
+
+message PeerServerMessage {
+    oneof message {
+        PeerMessage peer_message = 1;
+
+        ServerHello server_hello = 2;
+    }
+}
+
+message PeerMessage {
+    oneof message {
+        PeeringAbort abort = 1;
+
+        HttpRequestStart http_request_start = 10;
+        HttpRequestBody http_request_body = 11;
+        HttpRequestEnd http_request_end = 12;
+
+        HttpResponseStart http_response_start = 20;
+        HttpResponseBody http_response_body = 21;
+        HttpResponseEnd http_response_end = 22;
+    }
+}
+
+message PeeringAbort {
+    enum PeeringError {
+        HANDSHAKE_FAILURE = 0;
+        STREAM_CLOSED = 1;
+        INVALID_MESSAGE_ORDER = 2;
+    }
+    PeeringError error = 1;
+}
