@@ -15,7 +15,7 @@ ldflags = "-X main.buildVersion=$(VERSION_ID) -X main.buildAt=$(shell date +'%s'
 build: $(release_dir).zip
 
 test: generate
-	DEBUG='*' go test -v -race -timeout 30m -coverprofile=coverage.txt -covermode=atomic ./...
+	DEBUG='*' go test -v -race -timeout 30m -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic ./...
 	go tool cover -html=coverage.txt -o coverage.html
 
 test.profile: generate
