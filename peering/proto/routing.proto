@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "peering/proto/generated";
+
+message RoutingMessage {
+    string dest_node_id = 1;
+
+    oneof route {
+        HttpRoute http = 10;
+    }
+}
+
+message HttpRoute {
+    string hostname_pattern = 10;
+}

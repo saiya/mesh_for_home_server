@@ -9,6 +9,7 @@ option go_package = "peering/proto/generated";
 
 import "peering/proto/http.proto";
 import "peering/proto/handshake.proto";
+import "peering/proto/routing.proto";
 
 service Peering {
     rpc Peer(stream PeerClientMessage) returns (stream PeerServerMessage);
@@ -20,6 +21,8 @@ message PeerClientMessage {
 
         ClientHello client_hello = 2;
         HandShakeDone handshake_done = 3;
+
+        RoutingMessage routing = 10;
     }
 }
 
@@ -29,6 +32,8 @@ message PeerServerMessage {
 
         ServerHello server_hello = 2;
         PeerCloseByServer close_by_server = 3;
+
+        RoutingMessage routing = 10;
     }
 }
 
@@ -48,13 +53,13 @@ message PeerMessage {
         Ping ping = 2;
         Pong pong = 3;
 
-        HttpRequestStart http_request_start = 10;
-        HttpRequestBody http_request_body = 11;
-        HttpRequestEnd http_request_end = 12;
+        HttpRequestStart http_request_start = 20;
+        HttpRequestBody http_request_body = 21;
+        HttpRequestEnd http_request_end = 22;
 
-        HttpResponseStart http_response_start = 20;
-        HttpResponseBody http_response_body = 21;
-        HttpResponseEnd http_response_end = 22;
+        HttpResponseStart http_response_start = 30;
+        HttpResponseBody http_response_body = 31;
+        HttpResponseEnd http_response_end = 32;
     }
 }
 

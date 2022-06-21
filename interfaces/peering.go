@@ -18,6 +18,7 @@ type PeeringServerStat struct {
 	PeeringConnections  uint64
 	HandshakeAttempts   uint64
 	HandshakeSucceeded  uint64
+	RouteRecived        uint64
 	PeerMessageReceived uint64
 }
 
@@ -26,6 +27,7 @@ func (stat *PeeringServerStat) Clone() PeeringServerStat {
 		PeeringConnections:  atomic.LoadUint64(&stat.PeeringConnections),
 		HandshakeAttempts:   atomic.LoadUint64(&stat.HandshakeAttempts),
 		HandshakeSucceeded:  atomic.LoadUint64(&stat.HandshakeSucceeded),
+		RouteRecived:        atomic.LoadUint64(&stat.RouteRecived),
 		PeerMessageReceived: atomic.LoadUint64(&stat.PeerMessageReceived),
 	}
 }
@@ -45,6 +47,7 @@ type PeeringClientStat struct {
 	PeeringConnected    uint64
 	HandshakeAttempts   uint64
 	HandshakeSucceeded  uint64
+	RouteRecived        uint64
 	PeerMessageReceived uint64
 }
 
@@ -54,6 +57,7 @@ func (stat *PeeringClientStat) Clone() PeeringClientStat {
 		PeeringConnected:    atomic.LoadUint64(&stat.PeeringConnected),
 		HandshakeAttempts:   atomic.LoadUint64(&stat.HandshakeAttempts),
 		HandshakeSucceeded:  atomic.LoadUint64(&stat.HandshakeSucceeded),
+		RouteRecived:        atomic.LoadUint64(&stat.RouteRecived),
 		PeerMessageReceived: atomic.LoadUint64(&stat.PeerMessageReceived),
 	}
 }

@@ -28,7 +28,15 @@ message HttpResponseStart {
 
     // e.g. "200 OK"
     string status = 2;
-    repeated HttpHeader headers = 3;
+    int32 proto_major = 3;
+    int32 proto_minor = 4;
+
+    fixed64 content_length = 10;
+    repeated string transfer_encoding = 11;
+    bool close = 12;
+    // Expects http.Redponse.Uncompressed to be always false
+
+    repeated HttpHeader headers = 20;
 }
 
 message HttpResponseBody {

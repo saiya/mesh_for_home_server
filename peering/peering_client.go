@@ -128,9 +128,11 @@ func (c *peeringClientConnection) peering() error {
 		switch msg := packet.Message.(type) {
 		case *generated.PeerServerMessage_CloseByServer:
 			return fmt.Errorf("Stream closed by server, likely protocol error happened: %v", msg.CloseByServer.Reason)
+		case *generated.PeerServerMessage_Routing:
+			atomic.AddUint64(&c.stat.RouteRecived, 1)
+			c.router.Update(ctx, msg.Routing)
 		case *generated.PeerServerMessage_PeerMessage:
 			atomic.AddUint64(&c.stat.PeerMessageReceived, 1)
-			logger.GetFrom(ctx).Debugw("Peer message received", "peer-msg", interfaces.MsgLogString(msg.PeerMessage))
 			c.router.Deliver(ctx, handShakeResult.peerNodeID, c.router.NodeID(), msg.PeerMessage)
 		default:
 			return fmt.Errorf("Unknown message received, closing connection")

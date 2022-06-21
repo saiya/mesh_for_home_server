@@ -3,8 +3,10 @@ package interfaces
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"github.com/saiya/mesh_for_home_server/config"
+	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 )
 
 var ErrUnknownPeer = errors.New("no route to deliver")
@@ -17,6 +19,10 @@ type RouterUnregister = func()
 type Router interface {
 	// NodeID returns this node itself's ID
 	NodeID() config.NodeID
+
+	Update(ctx context.Context, routing *generated.RoutingMessage)
+	// If no route found, returns ErrUnknownPeer
+	RouteHTTPRequest(req *http.Request) (config.NodeID, error)
 
 	// Deliver transfer given message or handle that message in this node itself
 	Deliver(ctx context.Context, from config.NodeID, dest config.NodeID, msg Message)

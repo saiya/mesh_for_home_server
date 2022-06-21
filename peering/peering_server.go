@@ -151,6 +151,9 @@ func (s *peeringServer) Peer(conn generated.Peering_PeerServer) error {
 			}
 
 			switch msg := packet.Message.(type) {
+			case *generated.PeerClientMessage_Routing:
+				atomic.AddUint64(&s.stat.RouteRecived, 1)
+				s.router.Update(ctx, msg.Routing)
 			case *generated.PeerClientMessage_PeerMessage:
 				atomic.AddUint64(&s.stat.PeerMessageReceived, 1)
 				s.router.Deliver(ctx, handshakeResult.peerNodeID, s.router.NodeID(), msg.PeerMessage)
