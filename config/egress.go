@@ -1,6 +1,6 @@
 package config
 
-type EgressConfig struct {
+type EgressConfigs struct {
 	HTTP []HTTPEgressConfig `json:"http"`
 }
 

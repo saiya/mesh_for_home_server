@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/saiya/mesh_for_home_server/config"
-	"github.com/saiya/mesh_for_home_server/executor"
-	"github.com/saiya/mesh_for_home_server/handler"
+	"github.com/saiya/mesh_for_home_server/egress/handler"
+	"github.com/saiya/mesh_for_home_server/ingress/forwarder"
 	"github.com/saiya/mesh_for_home_server/router"
 	"github.com/saiya/mesh_for_home_server/tlshelper/tlstesting"
 	"github.com/stretchr/testify/assert"
@@ -20,13 +20,13 @@ func TestPeering(t *testing.T) {
 	serverRouter := router.NewRouter("server-")
 	serverPingHandler := handler.NewPingHandler(serverRouter)
 	defer serverPingHandler.Close(ctx)
-	pingFromServer := executor.NewPingExecutor(serverRouter)
+	pingFromServer := forwarder.NewPingForwarder(serverRouter)
 	defer pingFromServer.Close(ctx)
 
 	clientRouter := router.NewRouter("client-")
 	clientPingHandler := handler.NewPingHandler(clientRouter)
 	defer clientPingHandler.Close(ctx)
-	pingFromClient := executor.NewPingExecutor(clientRouter)
+	pingFromClient := forwarder.NewPingForwarder(clientRouter)
 	defer pingFromClient.Close(ctx)
 
 	serverTLSConfig := tlstesting.GenerateServerCert("localhost")

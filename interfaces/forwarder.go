@@ -8,17 +8,17 @@ import (
 	"github.com/saiya/mesh_for_home_server/config"
 )
 
-type Executor interface {
+type Forwarder interface {
 	Close(context.Context) error
 }
 
-type HTTPExecutor interface {
-	Executor
+type HTTPForwarder interface {
+	Forwarder
 	http.RoundTripper
 }
 
-type PingExecutor interface {
-	Executor
+type PingForwarder interface {
+	Forwarder
 
 	Ping(ctx context.Context, dest config.NodeID, timeout time.Duration) error
 }

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "peering/proto/generated";
+
+message Ping {
+    string payload = 1;
+}
+
+message Pong {
+    // Copy of Ping.payload
+    string payload = 1;
+}

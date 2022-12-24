@@ -1,4 +1,4 @@
-package executor
+package forwarder
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 )
 
-type pingExecutor struct {
+type pingForwarder struct {
 	router           interfaces.Router
 	unregisterListen interfaces.RouterUnregister
 
@@ -28,8 +28,8 @@ type inFlightPing struct {
 	sucessCh  chan struct{}
 }
 
-func NewPingExecutor(router interfaces.Router) interfaces.PingExecutor {
-	exec := &pingExecutor{
+func NewPingForwarder(router interfaces.Router) interfaces.PingForwarder {
+	exec := &pingForwarder{
 		router: router,
 		table:  make(map[string]*inFlightPing),
 	}
@@ -43,7 +43,7 @@ func NewPingExecutor(router interfaces.Router) interfaces.PingExecutor {
 	return exec
 }
 
-func (exec *pingExecutor) Close(ctx context.Context) error {
+func (exec *pingForwarder) Close(ctx context.Context) error {
 	exec.m.Lock()
 	defer exec.m.Unlock()
 
@@ -51,7 +51,7 @@ func (exec *pingExecutor) Close(ctx context.Context) error {
 	return nil
 }
 
-func (exec *pingExecutor) Ping(ctx context.Context, dest config.NodeID, timeout time.Duration) error {
+func (exec *pingForwarder) Ping(ctx context.Context, dest config.NodeID, timeout time.Duration) error {
 	nonce := exec.generateNonce(dest)
 	logger.GetFrom(ctx).Infow("Executing PING...", "dest", dest, "timeout", timeout, "nonce", nonce)
 
@@ -88,7 +88,7 @@ func (exec *pingExecutor) Ping(ctx context.Context, dest config.NodeID, timeout 
 	}
 }
 
-func (exec *pingExecutor) Pong(ctx context.Context, msg *generated.Pong) {
+func (exec *pingForwarder) Pong(ctx context.Context, msg *generated.Pong) {
 	logger.GetFrom(ctx).Infow("PONG received", "nonce", msg.Payload)
 
 	var inflight *inFlightPing
@@ -104,6 +104,6 @@ func (exec *pingExecutor) Pong(ctx context.Context, msg *generated.Pong) {
 	close(inflight.sucessCh)
 }
 
-func (exec *pingExecutor) generateNonce(dest config.NodeID) string {
+func (exec *pingForwarder) generateNonce(dest config.NodeID) string {
 	return fmt.Sprintf("%s$%s$nonce:%s", exec.router.NodeID(), dest, uuid.New().String())
 }

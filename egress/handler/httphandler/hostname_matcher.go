@@ -1,4 +1,4 @@
-package httpegress
+package httphandler
 
 import (
 	"regexp"

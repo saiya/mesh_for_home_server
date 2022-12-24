@@ -1,6 +1,6 @@
 package config
 
-type IngressConfig struct {
+type IngressConfigs struct {
 	HTTP []HTTPIngressConfig `json:"http"`
 }
 

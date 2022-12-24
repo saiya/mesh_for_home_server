@@ -7,8 +7,9 @@ package test;
 
 option go_package = "peering/proto/generated";
 
-import "peering/proto/http.proto";
 import "peering/proto/handshake.proto";
+import "peering/proto/http.proto";
+import "peering/proto/ping.proto";
 
 service Peering {
     rpc Peer(stream PeerClientMessage) returns (stream PeerServerMessage);
@@ -56,13 +57,4 @@ message PeerMessage {
         HttpResponseBody http_response_body = 21;
         HttpResponseEnd http_response_end = 22;
     }
-}
-
-message Ping {
-    string payload = 1;
-}
-
-message Pong {
-    // Copy of Ping.payload
-    string payload = 1;
 }
