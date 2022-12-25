@@ -3,7 +3,5 @@ syntax = "proto3";
 option go_package = "peering/proto/generated";
 
 message RequestID {
-    string ingress_node_id = 1;
-    string egress_node_id = 2;
-    int64 sequence = 3;
+    int64 sequence = 1;
 }

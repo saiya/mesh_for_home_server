@@ -1,18 +1,15 @@
-package integrationtest_test
+package integration_test_test
 
 import (
 	"context"
 	"fmt"
-	"math"
 	"testing"
 	"time"
 
 	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/saiya/mesh_for_home_server/egress/handler"
 	"github.com/saiya/mesh_for_home_server/ingress/forwarder"
-	"github.com/saiya/mesh_for_home_server/interfaces"
 	"github.com/saiya/mesh_for_home_server/peering"
-	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 	"github.com/saiya/mesh_for_home_server/router"
 	"github.com/saiya/mesh_for_home_server/tlshelper/tlstesting"
 	"github.com/stretchr/testify/assert"
@@ -20,18 +17,15 @@ import (
 
 func TestPeering(t *testing.T) {
 	ctx := context.Background()
-	emptyAd := func(ctx context.Context) (interfaces.Advertisement, error) {
-		return &generated.Advertisement{ExpireAt: math.MaxInt64}, nil
-	}
 
-	serverRouter := router.NewRouter("server", emptyAd)
+	serverRouter := router.NewRouter("server")
 	defer serverRouter.Close(ctx)
 	serverPingHandler := handler.NewPingHandler(serverRouter)
 	defer serverPingHandler.Close(ctx)
 	pingFromServer := forwarder.NewPingForwarder(serverRouter)
 	defer pingFromServer.Close(ctx)
 
-	clientRouter := router.NewRouter("client", emptyAd)
+	clientRouter := router.NewRouter("client")
 	defer clientRouter.Close(ctx)
 	clientPingHandler := handler.NewPingHandler(clientRouter)
 	defer clientPingHandler.Close(ctx)

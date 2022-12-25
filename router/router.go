@@ -7,6 +7,7 @@ import (
 	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/saiya/mesh_for_home_server/interfaces"
 	"github.com/saiya/mesh_for_home_server/logger"
+	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 	"github.com/saiya/mesh_for_home_server/router/routetable"
 )
 
@@ -70,6 +71,10 @@ func (r *router) GenerateAdvertisement(ctx context.Context) (interfaces.Advertis
 		advFn = r.advFn
 	}()
 
+	if advFn == nil {
+		logger.GetFrom(ctx).Errorw("AdvertisementProvider not found, stubbing with empty AD...")
+		return &generated.Advertisement{}, nil
+	}
 	return advFn(ctx)
 }
 
