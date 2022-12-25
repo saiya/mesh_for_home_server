@@ -1,7 +1,7 @@
 package config
 
 type EgressConfigs struct {
-	HTTP []HTTPEgressConfig `json:"http"`
+	HTTP []HTTPEgressConfig `json:"http" yaml:"http"`
 }
 
 type HTTPEgressConfig struct {
@@ -12,8 +12,8 @@ type HTTPEgressConfig struct {
 	// "*" match with only 1 level of hostname element (e.g. "*.example.com" not match with "a.b.example.com")
 	//
 	// If multiple egress matches with request, longest match preffered.
-	Host string `json:"host"`
+	Host string `json:"host" yaml:"host"`
 
 	// Upstream serer, "hostname:port" format (e.g. "localhost:8080")
-	Server string `json:"server"`
+	Server string `json:"server" yaml:"server"`
 }
