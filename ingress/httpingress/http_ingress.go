@@ -71,7 +71,7 @@ func NewHTTPIngress(
 			err = h.hserver.Serve(tcpListener)
 		}
 		if err != http.ErrServerClosed {
-			logger.Get().Errorw("Failed to start HTTP(S) ingress", "err", err)
+			logger.Get().Errorw("Failed to start HTTP(S) ingress: "+err.Error(), "err", err)
 			h.closeErr = err
 		} else {
 			logger.Get().Infow("HTTP(S) ingress closed", "err", err)

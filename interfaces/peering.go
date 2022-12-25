@@ -11,6 +11,8 @@ var ErrPeeringDown = errors.New("Peering connection not available")
 type PeeringServer interface {
 	String() string
 	Close(ctx context.Context) error
+
+	Port() int
 	Stat() PeeringServerStat
 }
 

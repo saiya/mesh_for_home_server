@@ -9,20 +9,20 @@ import (
 	"github.com/saiya/mesh_for_home_server/logger"
 )
 
-type broadcast struct {
+type inbound struct {
 	m sync.Mutex
 
 	listenerIDGen uint64
 	table         map[uint64]interfaces.RouterListener
 }
 
-func newBroardcast() *broadcast {
-	return &broadcast{
+func newInbound() *inbound {
+	return &inbound{
 		table: make(map[uint64]interfaces.RouterListener),
 	}
 }
 
-func (b *broadcast) Invoke(parentCtx context.Context, from config.NodeID, msg interfaces.Message) {
+func (b *inbound) Invoke(parentCtx context.Context, from config.NodeID, msg interfaces.Message) {
 	ctx := logger.Wrap(parentCtx, "from", from, "peer-msg", interfaces.MsgLogString(msg))
 
 	for _, handler := range b.Snapshot() {
@@ -33,7 +33,7 @@ func (b *broadcast) Invoke(parentCtx context.Context, from config.NodeID, msg in
 	}
 }
 
-func (b *broadcast) Snapshot() []interfaces.RouterListener {
+func (b *inbound) Snapshot() []interfaces.RouterListener {
 	b.m.Lock()
 	defer b.m.Unlock()
 
@@ -44,7 +44,7 @@ func (b *broadcast) Snapshot() []interfaces.RouterListener {
 	return snapshot
 }
 
-func (b *broadcast) Register(f interfaces.RouterListener) interfaces.RouterUnregister {
+func (b *inbound) Register(f interfaces.RouterListener) interfaces.RouterUnregister {
 	b.m.Lock()
 	defer b.m.Unlock()
 

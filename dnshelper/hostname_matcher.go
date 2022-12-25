@@ -1,17 +1,15 @@
-package httphandler
+package dnshelper
 
 import (
 	"regexp"
 	"strings"
-
-	"github.com/saiya/mesh_for_home_server/config"
 )
 
 // hostnameMatcher generate matcher function
 // Matcher returns positive int or 0 represents priority if matched.
 // If not match, matcher returns minus value.
-func hostnameMatcher(c *config.HTTPEgressConfig) func(string) int64 {
-	host := normalizeHostname(c.Host)
+func HostnameMatcher(matcher string) func(string) int64 {
+	host := normalizeHostname(matcher)
 
 	if host == "" {
 		return func(givenHostname string) int64 {

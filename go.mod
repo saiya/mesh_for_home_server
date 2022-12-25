@@ -32,5 +32,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.7.2
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
+	golang.org/x/sync v0.1.0
 	software.sslmate.com/src/go-pkcs12 v0.2.0
 )

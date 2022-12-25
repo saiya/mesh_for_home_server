@@ -8,47 +8,48 @@ import (
 	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/saiya/mesh_for_home_server/interfaces"
 	"github.com/saiya/mesh_for_home_server/logger"
+	"golang.org/x/sync/errgroup"
 )
 
-type unicasts struct {
+type outbounds struct {
 	m     sync.Mutex
-	table map[config.NodeID]*unicast
+	table map[config.NodeID]*outbound
 }
 
-type unicast struct {
+type outbound struct {
 	m           sync.Mutex
 	idGenerator uint64
 	table       map[uint64]interfaces.RouterShink
 }
 
-func newUnicasts() *unicasts {
-	return &unicasts{
-		table: make(map[config.NodeID]*unicast),
+func newOutbounds() *outbounds {
+	return &outbounds{
+		table: make(map[config.NodeID]*outbound),
 	}
 }
 
-func newUnicast() *unicast {
-	return &unicast{
+func newOutbound() *outbound {
+	return &outbound{
 		table: make(map[uint64]interfaces.RouterShink),
 	}
 }
 
-func (u *unicasts) Register(dest config.NodeID, callback interfaces.RouterShink) interfaces.RouterUnregister {
-	var unicast *unicast
+func (u *outbounds) Register(dest config.NodeID, callback interfaces.RouterShink) interfaces.RouterUnregister {
+	var unicast *outbound
 	func() {
 		u.m.Lock()
 		defer u.m.Unlock()
 
 		unicast = u.table[dest]
 		if unicast == nil {
-			unicast = newUnicast()
+			unicast = newOutbound()
 			u.table[dest] = unicast
 		}
 	}()
 	return unicast.Register(callback)
 }
 
-func (u *unicast) Register(callback interfaces.RouterShink) interfaces.RouterUnregister {
+func (u *outbound) Register(callback interfaces.RouterShink) interfaces.RouterUnregister {
 	u.m.Lock()
 	defer u.m.Unlock()
 
@@ -63,8 +64,24 @@ func (u *unicast) Register(callback interfaces.RouterShink) interfaces.RouterUnr
 	}
 }
 
-func (u *unicasts) Deliver(ctx context.Context, dest config.NodeID, msg interfaces.Message) error {
-	var unicast *unicast
+func (u *outbounds) Broadcast(ctx context.Context, msg interfaces.Message) error {
+	var eg errgroup.Group
+
+	func() {
+		u.m.Lock()
+		defer u.m.Unlock()
+
+		for _, unicast := range u.table {
+			eg.Go(func() error {
+				return unicast.Deliver(ctx, msg)
+			})
+		}
+	}()
+	return eg.Wait()
+}
+
+func (u *outbounds) Deliver(ctx context.Context, dest config.NodeID, msg interfaces.Message) error {
+	var unicast *outbound
 	func() {
 		u.m.Lock()
 		defer u.m.Unlock()
@@ -77,7 +94,7 @@ func (u *unicasts) Deliver(ctx context.Context, dest config.NodeID, msg interfac
 	return unicast.Deliver(ctx, msg)
 }
 
-func (u *unicast) Deliver(ctx context.Context, msg interfaces.Message) error {
+func (u *outbound) Deliver(ctx context.Context, msg interfaces.Message) error {
 	var list = make([]interfaces.RouterShink, 0, 16)
 	func() {
 		u.m.Lock()

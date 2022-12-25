@@ -107,6 +107,10 @@ func (s *peeringServer) String() string {
 	)
 }
 
+func (s *peeringServer) Port() int {
+	return s.port
+}
+
 func (s *peeringServer) Stat() interfaces.PeeringServerStat {
 	return s.stat.Clone()
 }

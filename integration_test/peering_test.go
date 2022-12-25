@@ -1,14 +1,18 @@
-package peering
+package integrationtest_test
 
 import (
 	"context"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
 	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/saiya/mesh_for_home_server/egress/handler"
 	"github.com/saiya/mesh_for_home_server/ingress/forwarder"
+	"github.com/saiya/mesh_for_home_server/interfaces"
+	"github.com/saiya/mesh_for_home_server/peering"
+	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 	"github.com/saiya/mesh_for_home_server/router"
 	"github.com/saiya/mesh_for_home_server/tlshelper/tlstesting"
 	"github.com/stretchr/testify/assert"
@@ -16,14 +20,19 @@ import (
 
 func TestPeering(t *testing.T) {
 	ctx := context.Background()
+	emptyAd := func(ctx context.Context) (interfaces.Advertisement, error) {
+		return &generated.Advertisement{ExpireAt: math.MaxInt64}, nil
+	}
 
-	serverRouter := router.NewRouter("server-")
+	serverRouter := router.NewRouter("server", emptyAd)
+	defer serverRouter.Close(ctx)
 	serverPingHandler := handler.NewPingHandler(serverRouter)
 	defer serverPingHandler.Close(ctx)
 	pingFromServer := forwarder.NewPingForwarder(serverRouter)
 	defer pingFromServer.Close(ctx)
 
-	clientRouter := router.NewRouter("client-")
+	clientRouter := router.NewRouter("client", emptyAd)
+	defer clientRouter.Close(ctx)
 	clientPingHandler := handler.NewPingHandler(clientRouter)
 	defer clientPingHandler.Close(ctx)
 	pingFromClient := forwarder.NewPingForwarder(clientRouter)
@@ -32,7 +41,7 @@ func TestPeering(t *testing.T) {
 	serverTLSConfig := tlstesting.GenerateServerCert("localhost")
 	clientTLSConfig := tlstesting.EnableClientCert(serverTLSConfig)
 
-	server, err := NewPeeringServer(
+	server, err := peering.NewPeeringServer(
 		&config.PeeringAcceptConfig{
 			Listen: "localhost:0",
 			TLS:    serverTLSConfig,
@@ -44,10 +53,10 @@ func TestPeering(t *testing.T) {
 
 	assert.Equal(t, uint64(0), server.Stat().HandshakeSucceeded)
 
-	client, err := NewPeeringClient(
+	client, err := peering.NewPeeringClient(
 		ctx,
 		&config.PeeringConnectConfig{
-			Address: fmt.Sprintf("localhost:%d", server.(*peeringServer).port),
+			Address: fmt.Sprintf("localhost:%d", server.Port()),
 			TLS:     clientTLSConfig,
 		},
 		clientRouter,

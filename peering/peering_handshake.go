@@ -17,6 +17,11 @@ func (s *peeringServer) doHandshake(ctx context.Context, conn generated.Peering_
 	logger.GetFrom(ctx).Debugw("Start of handshake...")
 	result := handshakeResult{}
 
+	ad, err := s.router.GenerateAdvertisement(ctx)
+	if err != nil {
+		return result, fmt.Errorf("failed to create Advertisement: %w", err)
+	}
+
 	helloMsg, err := conn.Recv()
 	if err != nil {
 		return result, fmt.Errorf("failed to receive CLIENT HELLO message: %w", err)
@@ -30,7 +35,8 @@ func (s *peeringServer) doHandshake(ctx context.Context, conn generated.Peering_
 	err = conn.Send(&generated.PeerServerMessage{
 		Message: &generated.PeerServerMessage_ServerHello{
 			ServerHello: &generated.ServerHello{
-				NodeId: string(s.router.NodeID()),
+				NodeId:        string(s.router.NodeID()),
+				Advertisement: ad,
 			},
 		},
 	})
@@ -55,10 +61,16 @@ func (c *peeringClientConnection) doHandshake(ctx context.Context, conn generate
 	logger.GetFrom(ctx).Debugw("Start of handshake...")
 	result := handshakeResult{}
 
-	err := conn.Send(&generated.PeerClientMessage{
+	ad, err := c.router.GenerateAdvertisement(ctx)
+	if err != nil {
+		return result, fmt.Errorf("failed to create Advertisement: %w", err)
+	}
+
+	err = conn.Send(&generated.PeerClientMessage{
 		Message: &generated.PeerClientMessage_ClientHello{
 			ClientHello: &generated.ClientHello{
-				NodeId: string(c.router.NodeID()),
+				NodeId:        string(c.router.NodeID()),
+				Advertisement: ad,
 			},
 		},
 	})

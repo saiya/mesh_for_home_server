@@ -7,6 +7,7 @@ package test;
 
 option go_package = "peering/proto/generated";
 
+import "peering/proto/advertisement.proto";
 import "peering/proto/handshake.proto";
 import "peering/proto/http.proto";
 import "peering/proto/ping.proto";
@@ -46,6 +47,7 @@ message PeerCloseByServer {
 
 message PeerMessage {
     oneof message {
+        Advertisement advertisement = 1;
         Ping ping = 2;
         Pong pong = 3;
 

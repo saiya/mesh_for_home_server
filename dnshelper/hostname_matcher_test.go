@@ -1,19 +1,14 @@
-package httphandler
+package dnshelper
 
 import (
 	"testing"
 
-	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHostnameMatcher(t *testing.T) {
 	test := func(hostnameMatchWith string, requestHostname string, expect bool) {
-		matcher := hostnameMatcher(
-			&config.HTTPEgressConfig{
-				Host: hostnameMatchWith,
-			},
-		)
+		matcher := HostnameMatcher(hostnameMatchWith)
 		assert.Equal(t, expect, matcher(requestHostname) >= 0)
 	}
 

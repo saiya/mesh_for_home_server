@@ -2,14 +2,18 @@ syntax = "proto3";
 
 option go_package = "peering/proto/generated";
 
+import "peering/proto/advertisement.proto";
+
 message ClientHello {
     string node_id = 1;
 
-    repeated string http_hostname_matchers = 2;
+	Advertisement advertisement = 10;
 }
 
 message ServerHello {
     string node_id = 1;
+
+	Advertisement advertisement = 10;
 }
 
 message HandShakeDone {}

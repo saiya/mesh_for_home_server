@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "peering/proto/generated";
+
+message Advertisement {
+    int64 expireAt = 1;
+
+    HttpAdvertisement http = 10;
+}
+
+message HttpAdvertisement {
+    repeated string hostname_matchers = 1;
+}
