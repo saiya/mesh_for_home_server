@@ -37,6 +37,7 @@ func NewPeeringClient(parentCtx context.Context, cfg *config.PeeringConnectConfi
 	}
 	c.ctx, c.ctxCancel = context.WithCancel(parentCtx)
 	c.ctx = logger.Wrap(c.ctx, "addr", c.addr)
+	logger.GetFrom(c.ctx).Debugw("Initializing peering clients...")
 
 	err := newGRPCClient(cfg, &c)
 	if err != nil {
@@ -75,6 +76,7 @@ func NewPeeringClient(parentCtx context.Context, cfg *config.PeeringConnectConfi
 					continue
 				}
 			}
+			logger.GetFrom(connCtx).Debugw("Peering connection ended")
 		}()
 	}
 	return &c, nil
@@ -90,6 +92,7 @@ type peeringClientConnection struct {
 
 func (c *peeringClientConnection) peering() error {
 	ctx := c.ctx
+	logger.GetFrom(ctx).Debugw("Establishing peering connection...")
 
 	atomic.AddUint64(&c.stat.PeeringAttempts, 1)
 	conn, err := generated.NewPeeringClient(c.client.gc).Peer(ctx)
@@ -107,9 +110,13 @@ func (c *peeringClientConnection) peering() error {
 		return err
 	}
 	atomic.AddUint64(&c.stat.HandshakeSucceeded, 1)
+	logger.GetFrom(ctx).Debugw("Handshake done", "node", handShakeResult.peerNodeID)
 
+	// FIXME: This code sending same message over ALL peering connections (= sending duplicated message)
+	// Should implement living-conection list and round-robin
+	sinkLoggingCtx := ctx
 	deregisterShink := c.router.RegisterSink(handShakeResult.peerNodeID, func(ctx context.Context, msg interfaces.Message) error {
-		logger.GetFrom(ctx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
+		logger.GetFrom(sinkLoggingCtx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
 		return conn.Send(&generated.PeerClientMessage{
 			Message: &generated.PeerClientMessage_PeerMessage{
 				PeerMessage: msg,
@@ -168,6 +175,8 @@ func newGRPCClient(config *config.PeeringConnectConfig, c *peeringClient) error 
 			return err
 		}
 		options = append(options, grpc.WithTransportCredentials(credentials.NewTLS(tls)))
+	} else {
+		options = append(options, grpc.WithInsecure())
 	}
 
 	c.gc, err = grpc.Dial(config.Address, options...)

@@ -1,0 +1,14 @@
+peering:
+  accept:
+    listen: "0.0.0.0:8089"
+
+ingress:
+  http:
+    - listen: "0.0.0.0:8088"
+      probe:
+        path: "/probe"
+
+egress:
+  http:
+    - host: "a.test"
+      server: "localhost:8080"

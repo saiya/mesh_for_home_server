@@ -12,7 +12,7 @@ import (
 	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 )
 
-func StartEgress(c *config.EgressConfigs, router interfaces.Router) (interfaces.Advertiser, []interfaces.MessageHandler, error) {
+func StartEgress(c *config.EgressConfigs, router interfaces.Router) (interfaces.AdvertisementProvider, []interfaces.MessageHandler, error) {
 	httpHandler := httphandler.NewHttpHandler(router)
 	handlers := []interfaces.MessageHandler{
 		handler.NewPingHandler(router),

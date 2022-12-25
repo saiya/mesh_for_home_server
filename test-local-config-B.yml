@@ -1,0 +1,15 @@
+peering:
+  connect:
+    - address: "localhost:8089"
+      connections: 1
+
+ingress:
+  http:
+    - listen: "0.0.0.0:8087"
+      probe:
+        path: "/probe"
+
+egress:
+  http:
+    - host: "b.test"
+      server: "localhost:8080"

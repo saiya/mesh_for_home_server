@@ -30,7 +30,6 @@ func debugIfError(msg string, err error, keysAndValues ...interface{}) {
 func formatErrorLogArgs(err error, keysAndValues ...interface{}) []interface{} {
 	args := make([]interface{}, 0, len(keysAndValues)+2)
 	copy(args, keysAndValues)
-	args = append(args, "err")
-	args = append(args, err)
+	args = append(args, "err", err)
 	return args
 }

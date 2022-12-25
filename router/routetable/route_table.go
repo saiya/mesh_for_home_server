@@ -32,8 +32,12 @@ func (rt *routeTable) Close(ctx context.Context) error {
 }
 
 func (rt *routeTable) Update(ctx context.Context, node config.NodeID, ad interfaces.Advertisement) {
+	logger.GetFrom(ctx).Debugw("Incoming advertisement", "node", node)
+
 	expireAt := time.Unix(ad.ExpireAt, 0)
-	rt.http.Update(ctx, node, expireAt, ad.Http)
+	if ad.Http != nil {
+		rt.http.Update(ctx, node, expireAt, ad.Http)
+	}
 }
 
 func (rt *routeTable) Route(ctx context.Context, request interfaces.Message) (config.NodeID, error) {

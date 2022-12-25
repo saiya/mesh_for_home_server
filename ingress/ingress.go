@@ -2,7 +2,6 @@ package ingress
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/saiya/mesh_for_home_server/ingress/forwarder"
@@ -10,7 +9,7 @@ import (
 	"github.com/saiya/mesh_for_home_server/interfaces"
 )
 
-func StartIngress(c *config.IngressConfigs, router interfaces.Router, httpExecutor http.RoundTripper) ([]interfaces.Ingress, []interfaces.Forwarder, error) {
+func StartIngress(c *config.IngressConfigs, router interfaces.Router) ([]interfaces.Ingress, []interfaces.Forwarder, error) {
 	ingresses := []interfaces.Ingress{}
 	forwarders := []interfaces.Forwarder{forwarder.NewPingForwarder(router)}
 	if c == nil {

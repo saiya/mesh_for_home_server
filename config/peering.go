@@ -1,8 +1,8 @@
 package config
 
 type PeeringConfig struct {
-	Accept  *PeeringAcceptConfig   `json:"accept" yaml:"accept"`
-	Connect []PeeringConnectConfig `json:"connect" yaml:"connect"`
+	Accept  *PeeringAcceptConfig    `json:"accept" yaml:"accept"`
+	Connect []*PeeringConnectConfig `json:"connect" yaml:"connect"`
 }
 
 type PeeringAcceptConfig struct {
@@ -17,7 +17,7 @@ const PeeringConnectionDefaultCount = 3
 
 type PeeringConnectConfig struct {
 	/** e.g. "localhost:50051" */
-	Address string
+	Address string `json:"address" yaml:"address"`
 
 	TLS *TLSClientConfig `json:"tls" yaml:"tls"`
 

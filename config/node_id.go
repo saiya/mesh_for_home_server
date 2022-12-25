@@ -1,9 +1,13 @@
 package config
 
 import (
+	cryptorand "crypto/rand"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
+	"time"
 
 	"github.com/saiya/mesh_for_home_server/logger"
 )
@@ -23,9 +27,12 @@ func GenerateNodeID(hostname string) NodeID {
 		}
 	}
 
+	randSeed := make([]byte, 8)
+	io.ReadFull(cryptorand.Reader, randSeed)
+	rng := rand.New(rand.NewSource(time.Now().Unix() ^ int64(binary.BigEndian.Uint64(randSeed))))
 	randPart := make([]byte, nodeIDrandLength)
 	for i := range randPart {
-		randPart[i] = nodeIDLetters[rand.Intn(len(nodeIDLetters))]
+		randPart[i] = nodeIDLetters[rng.Intn(len(nodeIDLetters))]
 	}
 	return NodeID(fmt.Sprintf("%s-%s", hostname, string(randPart)))
 }

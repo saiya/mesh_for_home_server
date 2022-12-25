@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"sync"
 
 	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/saiya/mesh_for_home_server/interfaces"
@@ -14,22 +15,24 @@ type router struct {
 
 	rt         routetable.RouteTable
 	advertiser *advertiser
+	advFnLock  sync.Mutex
+	advFn      interfaces.AdvertisementProvider
 
 	outbounds *outbounds
 	inbound   *inbound
 }
 
-func NewRouter(hostname string, advertiser interfaces.Advertiser) interfaces.Router {
+func NewRouter(hostname string) interfaces.Router {
 	outbounds := newOutbounds()
 	router := &router{
 		nodeID: config.GenerateNodeID(hostname),
 
-		rt:         routetable.NewRouteTable(),
-		advertiser: NewAdvertiser(advertiser, outbounds),
+		rt: routetable.NewRouteTable(),
 
 		outbounds: outbounds,
 		inbound:   newInbound(),
 	}
+	router.advertiser = NewAdvertiser(router.GenerateAdvertisement, outbounds)
 
 	router.inbound.Register(func(ctx context.Context, from config.NodeID, msg interfaces.Message) error {
 		ad := msg.GetAdvertisement()
@@ -39,6 +42,7 @@ func NewRouter(hostname string, advertiser interfaces.Advertiser) interfaces.Rou
 		return nil
 	})
 
+	logger.Get().Infow("Router initialized", "nodeID", router.nodeID)
 	return router
 }
 
@@ -50,8 +54,23 @@ func (r *router) NodeID() config.NodeID {
 	return r.nodeID
 }
 
+func (r *router) SetAdvertisementProvider(advFn interfaces.AdvertisementProvider) {
+	r.advFnLock.Lock()
+	defer r.advFnLock.Unlock()
+
+	r.advFn = advFn
+}
+
 func (r *router) GenerateAdvertisement(ctx context.Context) (interfaces.Advertisement, error) {
-	return r.advertiser.GenerateAdvertisement(ctx)
+	var advFn interfaces.AdvertisementProvider
+
+	func() {
+		r.advFnLock.Lock()
+		defer r.advFnLock.Unlock()
+		advFn = r.advFn
+	}()
+
+	return advFn(ctx)
 }
 
 func (r *router) Update(ctx context.Context, node config.NodeID, ad interfaces.Advertisement) {

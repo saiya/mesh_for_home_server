@@ -132,9 +132,9 @@ func (s *peeringServer) Peer(conn generated.Peering_PeerServer) error {
 	}
 	atomic.AddUint64(&s.stat.HandshakeSucceeded, 1)
 
-	deregisterShink := s.router.RegisterSink(handshakeResult.peerNodeID, func(parentCtx context.Context, msg interfaces.Message) error {
-		ctx := withConnectionLogAttributes(parentCtx)
-		logger.GetFrom(ctx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
+	shinkLoggingCtx := ctx
+	deregisterShink := s.router.RegisterSink(handshakeResult.peerNodeID, func(ctx context.Context, msg interfaces.Message) error {
+		logger.GetFrom(shinkLoggingCtx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
 		return conn.Send(
 			&generated.PeerServerMessage{
 				Message: &generated.PeerServerMessage_PeerMessage{

@@ -17,12 +17,13 @@ type RouterListener = func(ctx context.Context, from config.NodeID, msg Message)
 type RouterUnregister = func()
 
 type Advertisement *generated.Advertisement
-type Advertiser = func(ctx context.Context) (Advertisement, error)
+type AdvertisementProvider = func(ctx context.Context) (Advertisement, error)
 
 type Router interface {
 	// NodeID returns this node itself's ID
 	NodeID() config.NodeID
 
+	SetAdvertisementProvider(advFn AdvertisementProvider)
 	// Advertisement returns this node's Advertisement (= this node's capability)
 	GenerateAdvertisement(ctx context.Context) (Advertisement, error)
 	// Update routing based on incoming advertisement

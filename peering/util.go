@@ -26,17 +26,26 @@ func debugLogIfErr(ctx context.Context, err error) {
 
 var connectionIDGen = uint64(0)
 
+type connectionIDKey struct{}
+
 func withConnectionLogAttributes(ctx context.Context) context.Context {
+	connectionID := ctx.Value(connectionIDKey{})
+	if connectionID == nil {
+		connectionID = atomic.AddUint64(&connectionIDGen, 1)
+		ctx = context.WithValue(ctx, connectionIDKey{}, connectionID)
+	}
+
 	attributes := make([]interface{}, 0, 2*6)
-	attributes = append(attributes, "connection-id", atomic.AddUint64(&connectionIDGen, 1))
+	attributes = append(attributes, "connection-id", connectionID)
 
 	p, ok := peer.FromContext(ctx)
 	if ok {
-		attributes = append(
-			attributes,
-			"remote-addr", p.Addr.String(),
-			"auth-type", p.AuthInfo.AuthType(),
-		)
+		if p.Addr != nil {
+			attributes = append(attributes, "remote-addr", p.Addr.String())
+		}
+		if p.AuthInfo != nil {
+			attributes = append(attributes, "auth-type", p.AuthInfo.AuthType())
+		}
 	}
 
 	return logger.Wrap(ctx, attributes...)

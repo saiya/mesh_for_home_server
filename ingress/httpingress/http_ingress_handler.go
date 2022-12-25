@@ -60,7 +60,7 @@ func NewDefaultHTTPHandler(httpRouter http.RoundTripper) func(http.ResponseWrite
 
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			logger.Get().Infow(
-				"HTTP(S) request proxy failed",
+				"HTTP(S) request proxy failed: "+err.Error(),
 				formatErrorLogArgs(err, logAttributesOfRequest(r))...,
 			)
 

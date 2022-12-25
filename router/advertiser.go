@@ -11,7 +11,7 @@ import (
 )
 
 type advertiser struct {
-	advFn     interfaces.Advertiser
+	advFn     interfaces.AdvertisementProvider
 	outbounds *outbounds
 
 	ctx   context.Context
@@ -22,7 +22,7 @@ type advertiser struct {
 const advertiseInitialDelay = 500 * time.Millisecond
 const advertiseRetryDelay = 3000 * time.Second
 
-func NewAdvertiser(advFn interfaces.Advertiser, outbounds *outbounds) *advertiser {
+func NewAdvertiser(advFn interfaces.AdvertisementProvider, outbounds *outbounds) *advertiser {
 	ctx, close := context.WithCancel(context.Background())
 	av := &advertiser{
 		advFn:     advFn,
