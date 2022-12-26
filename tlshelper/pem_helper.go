@@ -5,13 +5,13 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
 // ParseCertificatePemFile expects PEM(DER(X509(cert))) format
 func ParseCertificatePemFile(filepath string) (*x509.Certificate, error) {
-	pemBytes, err := ioutil.ReadFile(filepath)
+	pemBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load cert file: %w", err)
 	}
@@ -28,7 +28,7 @@ func ParseCertificatePemFile(filepath string) (*x509.Certificate, error) {
 
 // ParsePrivateKeyPemFile expects PEM(DER(PKCS8(key))) format
 func ParsePrivateKeyPemFile(filepath string) (crypto.PrivateKey, error) {
-	pemBytes, err := ioutil.ReadFile(filepath)
+	pemBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to load client certificate root CA key file: %w", err)
 	}

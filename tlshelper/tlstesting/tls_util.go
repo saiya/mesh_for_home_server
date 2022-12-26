@@ -6,7 +6,8 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"io/ioutil"
+	"os"
+
 	"math/big"
 	"time"
 
@@ -30,13 +31,13 @@ func init() {
 
 	privBytes, err := x509.MarshalPKCS8PrivateKey(serverCertPrivateKey)
 	neverFail(err)
-	keyOut, err := ioutil.TempFile("", "key*.pem")
+	keyOut, err := os.CreateTemp("", "key*.pem")
 	neverFail(err)
 	serverCertPrivateKeyFile = keyOut.Name()
 	neverFail(pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}))
 	neverFail(keyOut.Close())
 
-	tempdir, err := ioutil.TempDir("", "test-server-cert")
+	tempdir, err := os.MkdirTemp("", "test-server-cert")
 	neverFail(err)
 	rootCA, err = tlshelper.NewSelfSignedRootCA(
 		&tlshelper.RootCAGenerateRequest{
@@ -81,7 +82,7 @@ func GenerateServerCert(hostname string) *config.TLSServerConfig {
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, rootCA.CACert, serverCertPublicKey, rootCA.PrivateKey)
 	neverFail(err)
-	certOut, err := ioutil.TempFile("", "cert*.pem")
+	certOut, err := os.CreateTemp("", "cert*.pem")
 	neverFail(err)
 	c.CertFile = certOut.Name()
 	neverFail(pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}))
@@ -93,7 +94,7 @@ func GenerateServerCert(hostname string) *config.TLSServerConfig {
 
 func EnableClientCert(serverConfig *config.TLSServerConfig) *config.TLSClientConfig {
 	clientCARoot, clientCert := generateClientCert()
-	clientCertFile, err := ioutil.TempFile("", "client-cert*.p12")
+	clientCertFile, err := os.CreateTemp("", "client-cert*.p12")
 	neverFail(err)
 	_, err = clientCertFile.Write(clientCert.PKCS12)
 	neverFail(err)
@@ -112,7 +113,7 @@ func EnableClientCert(serverConfig *config.TLSServerConfig) *config.TLSClientCon
 }
 
 func generateClientCert() (*tlshelper.RootCAGenerateResult, tlshelper.ClientCertGenerateResult) {
-	tempdir, err := ioutil.TempDir("", "test-client-cert")
+	tempdir, err := os.MkdirTemp("", "test-client-cert")
 	neverFail(err)
 
 	clientCertRootCA, err := tlshelper.NewSelfSignedRootCA(

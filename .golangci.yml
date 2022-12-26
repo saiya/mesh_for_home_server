@@ -3,9 +3,6 @@
 run:
   tests: true
 
-issues:
-  exclude-use-default: false
-
 linters:
   enable:
     - revive
@@ -18,8 +15,20 @@ linters:
     - misspell
 
 issues:
+  exclude-use-default: false
   exclude:
+    - "G304: Potential file inclusion via variable"
+    - "G306: Expect WriteFile permissions to be 0600 or less"
     - "G402: TLS MinVersion too low"
     - "G402: TLS InsecureSkipVerify set true"
-    - "G306: Expect WriteFile permissions to be 0600 or less"
     - "exported (type|method|function) (.+) should have comment or be unexported"
+
+  exclude-rules:
+    - path: _test\.go
+      linters: [ noctx ]
+    - path: _test\.go
+      text: "Error return value of `(.+).Close` is not checked"
+    - path: _test\.go
+      text: "G404:" # G404: Use of weak random number generator
+    - path: testutil/
+      text: "G404:" # G404: Use of weak random number generator

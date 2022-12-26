@@ -53,7 +53,8 @@ func requestToRequestMatcher(t *testing.T, r *http.Request) requestMatcher {
 
 func (req *requestMatcher) Match(t *testing.T, p HttpStub) bool {
 	r := req.r
-	if strings.ToUpper(p.Method) != strings.ToUpper(r.Method) {
+
+	if !strings.EqualFold(p.Method, r.Method) {
 		return false
 	}
 	if p.Path != r.URL.Path && !strings.HasPrefix(p.Path, r.URL.Path+"?") {

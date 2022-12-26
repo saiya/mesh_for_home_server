@@ -16,6 +16,8 @@ type HttpHandler interface {
 type httpHandler struct{}
 
 func NewHttpHandler(router interfaces.Router) HttpHandler {
+	// TODO: Support message re-ordering (nesessary due to multiplexing)
+
 	// FIXME: Implement
 	return &httpHandler{}
 }

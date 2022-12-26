@@ -67,7 +67,7 @@ type server struct {
 	ctxClose context.CancelFunc
 
 	router         interfaces.Router
-	peeringServer  interfaces.PeeringServer
+	peeringServers []interfaces.PeeringServer
 	peeringClients []interfaces.PeeringClient
 	egressHandlers []interfaces.MessageHandler
 	ingresses      []interfaces.Ingress
@@ -78,7 +78,7 @@ func StartServer(config *config.ServerConfig) (*server, error) {
 	router := router.NewRouter("")
 
 	ctx, ctxClose := context.WithCancel(context.Background())
-	peeringServer, peeringClients, err := peering.StartPeering(ctx, config.Perring, router)
+	peeringServers, peeringClients, err := peering.StartPeering(ctx, config.Perring, router)
 	if err != nil {
 		ctxClose()
 		return nil, fmt.Errorf("failed to initialize ingress: %w", err)
@@ -101,7 +101,7 @@ func StartServer(config *config.ServerConfig) (*server, error) {
 		ctx: ctx, ctxClose: ctxClose,
 
 		router:         router,
-		peeringServer:  peeringServer,
+		peeringServers: peeringServers,
 		peeringClients: peeringClients,
 		egressHandlers: egressHandlers,
 		ingresses:      ingresses,
@@ -131,7 +131,7 @@ func (srv *server) Close(ctx context.Context) {
 	for _, peeringClient := range srv.peeringClients {
 		catch(peeringClient.Close(ctx))
 	}
-	if srv.peeringServer != nil {
-		catch(srv.peeringServer.Close(ctx))
+	for _, peeringServer := range srv.peeringServers {
+		catch(peeringServer.Close(ctx))
 	}
 }

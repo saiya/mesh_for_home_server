@@ -10,8 +10,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/big"
+	"os"
 	"time"
 )
 
@@ -73,7 +73,7 @@ func generateRootCAKeys(req *RootCAGenerateRequest, result *RootCAGenerateResult
 	privKeyX509, err := x509.MarshalPKCS8PrivateKey(result.PrivateKey)
 	neverFail(err)
 
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		result.PrivateKeyFile,
 		pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privKeyX509}),
 		0600,
@@ -104,7 +104,7 @@ func generateRootCASelfSignCert(req *RootCAGenerateRequest, result *RootCAGenera
 	result.CACert, err = x509.ParseCertificate(derBytes)
 	neverFail(err)
 
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		result.CACertFile,
 		pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: result.CACert.Raw}),
 		0644,

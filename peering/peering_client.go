@@ -14,6 +14,7 @@ import (
 	"github.com/saiya/mesh_for_home_server/tlshelper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -169,15 +170,17 @@ func newGRPCClient(config *config.PeeringConnectConfig, c *peeringClient) error 
 		},
 	))
 
+	var creds credentials.TransportCredentials
 	if config.TLS != nil {
 		tls, err := tlshelper.BuildTLSClientConfig(config.TLS)
 		if err != nil {
 			return err
 		}
-		options = append(options, grpc.WithTransportCredentials(credentials.NewTLS(tls)))
+		creds = credentials.NewTLS(tls)
 	} else {
-		options = append(options, grpc.WithInsecure())
+		creds = insecure.NewCredentials()
 	}
+	options = append(options, grpc.WithTransportCredentials(creds))
 
 	c.gc, err = grpc.Dial(config.Address, options...)
 	if err != nil {

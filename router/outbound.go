@@ -72,6 +72,7 @@ func (u *outbounds) Broadcast(ctx context.Context, msg interfaces.Message) error
 		defer u.m.Unlock()
 
 		for _, unicast := range u.table {
+			unicast := unicast // Avoid captureing loop variable
 			eg.Go(func() error {
 				return unicast.Deliver(ctx, msg)
 			})

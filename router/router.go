@@ -33,7 +33,7 @@ func NewRouter(hostname string) interfaces.Router {
 		outbounds: outbounds,
 		inbound:   newInbound(),
 	}
-	router.advertiser = NewAdvertiser(router.GenerateAdvertisement, outbounds)
+	router.advertiser = newAdvertiser(router.GenerateAdvertisement, outbounds)
 
 	router.inbound.Register(func(ctx context.Context, from config.NodeID, msg interfaces.Message) error {
 		ad := msg.GetAdvertisement()

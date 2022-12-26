@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-option go_package = "peering/proto/generated";
-
-message RequestID {
-    int64 sequence = 1;
-}

@@ -28,7 +28,11 @@ func GenerateNodeID(hostname string) NodeID {
 	}
 
 	randSeed := make([]byte, 8)
-	io.ReadFull(cryptorand.Reader, randSeed)
+	_, err := io.ReadFull(cryptorand.Reader, randSeed)
+	if err != nil {
+		// Still system time provides some randomness
+		logger.Get().Infow("Failed to get randSeed: " + err.Error())
+	}
 	rng := rand.New(rand.NewSource(time.Now().Unix() ^ int64(binary.BigEndian.Uint64(randSeed))))
 	randPart := make([]byte, nodeIDrandLength)
 	for i := range randPart {

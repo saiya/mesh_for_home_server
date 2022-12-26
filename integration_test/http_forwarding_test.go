@@ -11,26 +11,22 @@ import (
 	"github.com/saiya/mesh_for_home_server/ingress/forwarder"
 	"github.com/saiya/mesh_for_home_server/interfaces"
 	"github.com/saiya/mesh_for_home_server/router"
-	"github.com/saiya/mesh_for_home_server/testutil"
+	util "github.com/saiya/mesh_for_home_server/testutil"
 )
 
 func TestRequests(t *testing.T) {
-	httpServer, port := testutil.NewHTTPStubServer(t, []testutil.HttpStubPattern{
-		{"GET", "/get", map[string]string{"param1": "a", "param2": "日本語"}, "", 200, nil},
-	}...)
+	httpServer, port := util.NewHTTPStubServer(t, util.DEFAULT_HTTP_STUBS...)
 	defer httpServer.Close()
 
 	test(t, port, func(httpClient *http.Client) {
-		for _, c := range []testutil.HttpTestCase{
-			{"GET", "/get?param1=a&param2=日本語", nil, 200, ""},
-		} {
+		for _, c := range util.DEFAULT_HTTP_TEST_CASES {
 			t.Run(c.String(), func(t *testing.T) { c.Do(t, httpClient, 80) })
 		}
 	})
 }
 
 func test(t *testing.T, port int, f func(httpClient *http.Client)) {
-	ctx := testutil.Context(t)
+	ctx := util.Context(t)
 
 	rt := router.NewRouter("test")
 	defer rt.Close(ctx)

@@ -2,10 +2,13 @@ syntax = "proto3";
 
 option go_package = "peering/proto/generated";
 
-import "peering/proto/common.proto";
+message HttpMessageIdentity {
+    int64 request_id = 1;
+    int64 msg_order = 2;
+}
 
 message HttpRequestStart {
-    RequestID request_id = 1;
+    HttpMessageIdentity identity = 1;
 
     string method = 2;
     string hostname = 3;
@@ -14,17 +17,17 @@ message HttpRequestStart {
 }
 
 message HttpRequestBody {
-    RequestID request_id = 1;
+    HttpMessageIdentity identity = 1;
 
-    bytes data = 2;
+    bytes data = 3;
 }
 
 message HttpRequestEnd {
-    RequestID request_id = 1;
+    HttpMessageIdentity identity = 1;
 }
 
 message HttpResponseStart {
-    RequestID request_id = 1;
+    HttpMessageIdentity identity = 1;
 
     // e.g. "200 OK"
     string status = 2;
@@ -32,13 +35,13 @@ message HttpResponseStart {
 }
 
 message HttpResponseBody {
-    RequestID request_id = 1;
+    HttpMessageIdentity identity = 1;
 
     bytes data = 2;
 }
 
 message HttpResponseEnd {
-    RequestID request_id = 1;
+    HttpMessageIdentity identity = 1;
 }
 
 message HttpHeader {

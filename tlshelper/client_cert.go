@@ -10,8 +10,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/saiya/mesh_for_home_server/config"
@@ -31,7 +31,7 @@ type ClientCertGenerateParameter struct {
 
 // ParsePKCS12File loads PKCS#12 encoded client credentials (certificate + private key)
 func ParsePKCS12File(config config.MTLSCertLoadConfig) (*tls.Certificate, error) {
-	pfxData, err := ioutil.ReadFile(config.Path)
+	pfxData, err := os.ReadFile(config.Path)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read client credentials file (%s): %w", config.Path, err)
 	}

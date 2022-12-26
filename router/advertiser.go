@@ -22,7 +22,7 @@ type advertiser struct {
 const advertiseInitialDelay = 500 * time.Millisecond
 const advertiseRetryDelay = 3000 * time.Second
 
-func NewAdvertiser(advFn interfaces.AdvertisementProvider, outbounds *outbounds) *advertiser {
+func newAdvertiser(advFn interfaces.AdvertisementProvider, outbounds *outbounds) *advertiser {
 	ctx, close := context.WithCancel(context.Background())
 	av := &advertiser{
 		advFn:     advFn,
@@ -54,7 +54,7 @@ MainLoop:
 			break MainLoop
 		case <-av.timer.C:
 			nextRun := av.advertise(av.ctx)
-			av.timer = *time.NewTimer(nextRun.Sub(time.Now()))
+			av.timer = *time.NewTimer(time.Until(nextRun))
 		}
 	}
 }
