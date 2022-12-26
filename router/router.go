@@ -23,6 +23,8 @@ type router struct {
 	inbound   *inbound
 }
 
+// NewRouter create & start the router.
+// To automatically detect hostname, can pass empty string in the argument.
 func NewRouter(hostname string) interfaces.Router {
 	outbounds := newOutbounds()
 	router := &router{

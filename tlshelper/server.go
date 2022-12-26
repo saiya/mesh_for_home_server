@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/saiya/mesh_for_home_server/config"
 )
@@ -35,7 +35,7 @@ func setupServerCert(c *tls.Config, cfg *config.TLSServerConfig) error {
 
 func setupTLSClientAuth(c *tls.Config, cfg *config.TLSServerConfig) error {
 	if cfg.ClientCertCAFile != "" {
-		caCertFile, err := ioutil.ReadFile(cfg.ClientCertCAFile)
+		caCertFile, err := os.ReadFile(cfg.ClientCertCAFile)
 		if err != nil {
 			return fmt.Errorf("failed to load TLS client cert CA file (%v): %w", cfg.ClientCertCAFile, err)
 		}

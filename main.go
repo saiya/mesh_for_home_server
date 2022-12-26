@@ -66,12 +66,16 @@ type server struct {
 	ctx      context.Context
 	ctxClose context.CancelFunc
 
+	//
+	// Fields ordered by initialization/close order
+	//
+
 	router         interfaces.Router
 	peeringServers []interfaces.PeeringServer
 	peeringClients []interfaces.PeeringClient
 	egressHandlers []interfaces.MessageHandler
-	ingresses      []interfaces.Ingress
 	forwarders     []interfaces.Forwarder
+	ingresses      []interfaces.Ingress
 }
 
 func StartServer(config *config.ServerConfig) (*server, error) {
@@ -104,8 +108,8 @@ func StartServer(config *config.ServerConfig) (*server, error) {
 		peeringServers: peeringServers,
 		peeringClients: peeringClients,
 		egressHandlers: egressHandlers,
-		ingresses:      ingresses,
 		forwarders:     forwarders,
+		ingresses:      ingresses,
 	}, nil
 }
 
