@@ -1,7 +1,6 @@
 package testutil
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,24 +11,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type HttpStubPattern struct {
-	Method      string
-	Path        string
-	QueryParams map[string]string
-	RequestBody string
-
-	StatusCode   int
-	ResponseBody *string
-}
-
-func NewHTTPStubServer(t *testing.T, patterns ...HttpStubPattern) (*httptest.Server, int) {
+func NewHTTPStubServer(t *testing.T, patterns ...HttpStub) (*httptest.Server, int) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		matcher := requestToRequestMatcher(t, r)
+
 		for _, p := range patterns {
-			if p.handle(t, w, r) {
+			if matcher.Match(t, p) {
+				p.handle(t, w, r)
 				return
 			}
 		}
-		assert.Failf(t, "None of registered pattern found, unexpected request %s %s", r.Method, r.URL)
+
+		var failMessage strings.Builder
+		failMessage.WriteString("None of registered pattern found, unexpected request ")
+		failMessage.WriteString(matcher.String())
+		failMessage.WriteString("\n")
+		failMessage.WriteString("Available stubs are...")
+		for _, p := range patterns {
+			failMessage.WriteString("\n")
+			failMessage.WriteString("  ")
+			failMessage.WriteString(p.String())
+		}
+		assert.Fail(t, failMessage.String())
 	}))
 	url, err := url.Parse(srv.URL)
 	assert.NoError(t, err)
@@ -38,35 +41,31 @@ func NewHTTPStubServer(t *testing.T, patterns ...HttpStubPattern) (*httptest.Ser
 	return srv, port
 }
 
-func (p *HttpStubPattern) handle(t *testing.T, w http.ResponseWriter, r *http.Request) bool {
-	if strings.ToUpper(p.Method) != strings.ToUpper(r.Method) {
-		return false
-	}
-	if p.Path != r.URL.Path && !strings.HasPrefix(p.Path, r.URL.Path+"?") {
-		return false
-	}
-
-	if p.QueryParams == nil {
-		if len(r.URL.Query()) != 0 {
-			return false
+func (p *HttpStub) handle(t *testing.T, w http.ResponseWriter, r *http.Request) {
+	if p.ResponseHeaders != nil {
+		for k, v := range p.ResponseHeaders {
+			w.Header()[k] = v
 		}
-	} else {
-		for k, v := range p.QueryParams {
-			if r.URL.Query().Get(k) != v {
-				return false
-			}
-		}
-	}
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	assert.NoError(t, err)
-	if p.RequestBody != string(bodyBytes) {
-		return false
 	}
 
 	w.WriteHeader(p.StatusCode)
+
 	if p.ResponseBody != nil {
-		w.Write([]byte(*p.ResponseBody))
+		respBody := *p.ResponseBody
+		if p.Options.ChunkResponseBodyPer == 0 {
+			_, err := w.Write(respBody)
+			assert.NoError(t, err)
+		} else {
+			for i := 0; i < len(respBody); i += p.Options.ChunkResponseBodyPer {
+				sliceEnd := i + p.Options.ChunkResponseBodyPer
+				if sliceEnd > len(respBody) {
+					sliceEnd = len(respBody)
+				}
+
+				_, err := w.Write(respBody[i:sliceEnd])
+				assert.NoError(t, err)
+				w.(http.Flusher).Flush()
+			}
+		}
 	}
-	return true
 }

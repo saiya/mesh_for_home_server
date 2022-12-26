@@ -4,20 +4,16 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/saiya/mesh_for_home_server/testutil"
+	util "github.com/saiya/mesh_for_home_server/testutil"
 )
 
 func TestStubServer(t *testing.T) {
-	httpServer, port := testutil.NewHTTPStubServer(t, []testutil.HttpStubPattern{
-		{"GET", "/get", map[string]string{"param1": "a", "param2": "日本語"}, "", 200, nil},
-	}...)
+	httpServer, port := util.NewHTTPStubServer(t, util.DEFAULT_HTTP_STUBS...)
 	defer httpServer.Close()
 
 	httpClient := &http.Client{}
 
-	for _, c := range []testutil.HttpTestCase{
-		{"GET", "/get?param1=a&param2=日本語", nil, 200, ""},
-	} {
+	for _, c := range util.DEFAULT_HTTP_TEST_CASES {
 		t.Run(c.String(), func(t *testing.T) { c.Do(t, httpClient, port) })
 	}
 }

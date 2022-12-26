@@ -1,22 +1,31 @@
 package testutil
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/slices"
 )
 
 type HttpTestCase struct {
 	Method         string
 	Path           string
-	RequestBody    *string
-	ExpectedStatus int
-	ExpectedBody   string
+	RequestHeaders map[string][]string
+	RequestBody    *[]byte
+
+	ExpectedStatus  int
+	ExpectedHeaders map[string][]string
+	ExpectedBody    *[]byte
+
+	Options HttpTestCaseOptions
 }
+
+// Options that usually not need to set
+type HttpTestCaseOptions struct{}
 
 func (c *HttpTestCase) String() string {
 	bodyBytes := -1
@@ -38,20 +47,43 @@ func (c *HttpTestCase) Do(t *testing.T, httpClient *http.Client, port int) {
 func (c *HttpTestCase) ToRequest(t *testing.T, port int) *http.Request {
 	var reqBody io.Reader
 	if c.RequestBody != nil {
-		reqBody = strings.NewReader(*c.RequestBody)
+		reqBody = bytes.NewReader(*c.RequestBody)
 	}
 	req, err := http.NewRequestWithContext(
 		Context(t),
 		c.Method, fmt.Sprintf("http://localhost:%d%s", port, c.Path),
-		reqBody)
+		reqBody,
+	)
+	if c.RequestHeaders != nil {
+		for k, v := range c.RequestHeaders {
+			req.Header[k] = v
+		}
+	}
 	assert.NoError(t, err)
 	return req
 }
 
 func (c *HttpTestCase) AssertResponse(t *testing.T, res *http.Response) {
-	assert.Equal(t, c.ExpectedStatus, res.StatusCode)
+	if !assert.Equal(t, c.ExpectedStatus, res.StatusCode) {
+		return
+	}
+
+	if c.ExpectedHeaders != nil {
+		for k, v := range c.ExpectedHeaders {
+			assert.Equal(t, v, res.Header[k])
+		}
+	}
 
 	resBody, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.Equal(t, c.ExpectedBody, string(resBody))
+	if c.ExpectedBody == nil {
+		assert.Equal(t, 0, len(resBody))
+	} else {
+		assert.Equal(t, len(*c.ExpectedBody), len(resBody))
+
+		// To avoid dumping body (it can be long), not pass []byte itself to assert
+		if !slices.Equal(*c.ExpectedBody, resBody) {
+			assert.Fail(t, "Response body not match")
+		}
+	}
 }
