@@ -1,13 +1,10 @@
 package config
 
 import (
-	cryptorand "crypto/rand"
-	"encoding/binary"
+	"crypto/rand"
 	"fmt"
-	"io"
-	"math/rand"
+	"math/big"
 	"os"
-	"time"
 
 	"github.com/saiya/mesh_for_home_server/logger"
 )
@@ -27,16 +24,15 @@ func GenerateNodeID(hostname string) NodeID {
 		}
 	}
 
-	randSeed := make([]byte, 8)
-	_, err := io.ReadFull(cryptorand.Reader, randSeed)
-	if err != nil {
-		// Still system time provides some randomness
-		logger.Get().Infow("Failed to get randSeed: " + err.Error())
-	}
-	rng := rand.New(rand.NewSource(time.Now().Unix() ^ int64(binary.BigEndian.Uint64(randSeed))))
 	randPart := make([]byte, nodeIDrandLength)
 	for i := range randPart {
-		randPart[i] = nodeIDLetters[rng.Intn(len(nodeIDLetters))]
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(nodeIDLetters))))
+		if err != nil {
+			// We generate NodeID only in the start of process.
+			// And if system's entropy pool not working, anyway we unlikely able to initialize TLS (for gRPC, HTTPS, ...) anyway.
+			panic("failed to read from system's secure random source: " + err.Error())
+		}
+		randPart[i] = nodeIDLetters[num.Int64()]
 	}
 	return NodeID(fmt.Sprintf("%s-%s", hostname, string(randPart)))
 }

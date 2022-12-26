@@ -25,11 +25,6 @@ func (fw *httpForwarder) Close(ctx context.Context) error {
 	return nil
 }
 
-func test() {
-	c := make(chan struct{}, 1)
-	c <- struct{}{}
-}
-
 func (fw *httpForwarder) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := logger.Wrap(req.Context(), "http", fmt.Sprintf("%s %s %s", req.Method, req.Host, req.RequestURI))
 	msgOrder := int64(0)
