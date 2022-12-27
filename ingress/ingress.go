@@ -24,7 +24,7 @@ func StartIngress(c *config.IngressConfigs, router interfaces.Router) ([]interfa
 		}
 
 		cfg := &c.HTTP[i]
-		httpIngress, err := httpingress.NewHTTPIngress(cfg, httpingress.NewDefaultHTTPHandler(httpForwarder))
+		httpIngress, err := httpingress.NewHTTPIngress(cfg, httpingress.NewDefaultHTTPHandler(httpForwarder.NewRoundTripper(cfg)))
 		if err != nil {
 			return ingresses, forwarders, fmt.Errorf("failed to start HTTP(S) ingress [%d]: %w", i, err)
 		}

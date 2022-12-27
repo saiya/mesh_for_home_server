@@ -74,7 +74,7 @@ func (r *router) GenerateAdvertisement(ctx context.Context) (interfaces.Advertis
 	}()
 
 	if advFn == nil {
-		logger.GetFrom(ctx).Errorw("AdvertisementProvider not found, stubbing with empty AD...")
+		logger.GetFrom(ctx).Errorw("AdvertisementProvider not found, using empty AD...")
 		return &generated.Advertisement{}, nil
 	}
 	return advFn(ctx)

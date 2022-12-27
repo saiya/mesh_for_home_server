@@ -50,13 +50,6 @@ message PeerMessage {
         Advertisement advertisement = 1;
         Ping ping = 2;
         Pong pong = 3;
-
-        HttpRequestStart http_request_start = 10;
-        HttpRequestBody http_request_body = 11;
-        HttpRequestEnd http_request_end = 12;
-
-        HttpResponseStart http_response_start = 20;
-        HttpResponseBody http_response_body = 21;
-        HttpResponseEnd http_response_end = 22;
+        HttpMessage http = 4;
     }
 }

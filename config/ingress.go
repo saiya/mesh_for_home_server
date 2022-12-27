@@ -12,11 +12,6 @@ type HTTPIngressConfig struct {
 	TLS *TLSServerConfig `json:"tls" yaml:"tls"`
 
 	Probe *HTTPProbeConfig `json:"probe" yaml:"probe"`
-}
 
-type HTTPProbeConfig struct {
-	// (optional) Hostname (expected Host header value) of the probe endpoint
-	Host string `json:"host" yaml:"host"`
-	// Path of the probe endpoint (e.g. "/probe")
-	Path string `json:"path" yaml:"path"`
+	ResponseTimeout *HTTPTimeout
 }

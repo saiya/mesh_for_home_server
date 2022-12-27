@@ -38,6 +38,7 @@ func (rt *httpRT) Update(ctx context.Context, node config.NodeID, expireAt time.
 			rt.routesByHostPattern[hostPattern] = route
 		}
 		route.routes.Save(Route{ExpireAt: expireAt, Dest: node})
+		logger.GetFrom(ctx).Debugw("HTTP route advertisement acknowledged", "host", hostPattern, "expire", expireAt, "dest", node)
 	}
 }
 

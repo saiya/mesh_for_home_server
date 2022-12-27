@@ -14,7 +14,7 @@ type Forwarder interface {
 
 type HTTPForwarder interface {
 	Forwarder
-	http.RoundTripper
+	NewRoundTripper(cfg *config.HTTPIngressConfig) http.RoundTripper
 }
 
 type PingForwarder interface {

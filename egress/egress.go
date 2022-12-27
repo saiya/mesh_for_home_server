@@ -40,9 +40,9 @@ func StartEgress(c *config.EgressConfigs, router interfaces.Router) (interfaces.
 }
 
 func newADExpireFunc(c *config.EgressConfigs) func() time.Time {
-	ttl := time.Duration(c.AdvertiseIntervalSec) * time.Second
-	if ttl == 0 {
-		ttl = config.AdvertiseIntervalDefault
+	ttl := config.AdvertiseIntervalDefault
+	if c != nil && c.AdvertiseIntervalSec > 0 {
+		ttl = time.Duration(c.AdvertiseIntervalSec) * time.Second
 	}
 	ttl += config.AdvertiseTtlMargin
 

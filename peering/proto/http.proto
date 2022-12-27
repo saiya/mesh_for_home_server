@@ -2,46 +2,56 @@ syntax = "proto3";
 
 option go_package = "peering/proto/generated";
 
+message HttpMessage {
+    HttpMessageIdentity identity = 1;
+
+    oneof message {
+        HttpRequestStart http_request_start = 2;
+        HttpRequestBody http_request_body = 3;
+        HttpRequestEnd http_request_end = 4;
+
+        HttpResponseStart http_response_start = 5;
+        HttpResponseBody http_response_body = 6;
+        HttpResponseEnd http_response_end = 7;
+    }
+}
+
 message HttpMessageIdentity {
     int64 request_id = 1;
     int64 msg_order = 2;
 }
 
 message HttpRequestStart {
-    HttpMessageIdentity identity = 1;
-
-    string method = 2;
-    string hostname = 3;
-    string path = 4;
-    repeated HttpHeader headers = 5;
+    string method = 1;
+    string hostname = 2;
+    string path = 3;
+    repeated HttpHeader headers = 4;
 }
 
 message HttpRequestBody {
-    HttpMessageIdentity identity = 1;
-
-    bytes data = 3;
+    bytes data = 1;
 }
 
-message HttpRequestEnd {
-    HttpMessageIdentity identity = 1;
-}
+message HttpRequestEnd {}
 
 message HttpResponseStart {
-    HttpMessageIdentity identity = 1;
+    string status = 1; // e.g. "200 OK"
+    int32 statusCode = 2; // e.g. 200
+    string proto = 3; // e.g. "HTTP/1.0"
+    int32 protoMajor = 4; // e.g. 1
+    int32 protoMinor = 5; // e.g. 0
 
-    // e.g. "200 OK"
-    string status = 2;
-    repeated HttpHeader headers = 3;
+    int64 contentLength = 6;
+    repeated string transferEncodings = 7;
+    repeated HttpHeader headers = 8;
 }
 
 message HttpResponseBody {
-    HttpMessageIdentity identity = 1;
-
-    bytes data = 2;
+    bytes data = 1;
 }
 
 message HttpResponseEnd {
-    HttpMessageIdentity identity = 1;
+    repeated HttpHeader trailers = 1;
 }
 
 message HttpHeader {

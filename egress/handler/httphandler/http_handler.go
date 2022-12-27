@@ -19,12 +19,16 @@ func NewHttpHandler(router interfaces.Router) HttpHandler {
 	// TODO: Support message re-ordering (nesessary due to multiplexing)
 
 	// FIXME: Implement
+	// TODO: Set http.Transport.DisableCompression
+
 	return &httpHandler{}
 }
 
 func (h *httpHandler) Advertise() *generated.HttpAdvertisement {
 	// FIXME: Implement
-	return nil
+	return &generated.HttpAdvertisement{
+		HostnameMatchers: []string{"*"},
+	}
 }
 
 func (h *httpHandler) AddEgress(c *config.HTTPEgressConfig) error {

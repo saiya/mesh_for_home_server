@@ -15,12 +15,12 @@ ldflags = "-X main.buildVersion=$(VERSION_ID) -X main.buildAt=$(shell date +'%s'
 build: $(release_dir).zip
 
 test: generate
-	DEBUG='*' go test -v -race -timeout 30m -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic ./...
+	DEBUG='*' go test -v -race -shuffle=on -timeout 30m -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic ./...
 	go tool cover -html=coverage.txt -o coverage.html
 
 test.profile: generate
 	mkdir -p pprof
-	DEBUG='*' go test -v -timeout 30m -bench -benchmem -o pprof/test.bin -cpuprofile pprof/cpu.out ./...
+	DEBUG='*' go test -v -shuffle=on -timeout 30m -bench -benchmem -o pprof/test.bin -cpuprofile pprof/cpu.out ./...
 	go tool pprof --svg pprof/test.bin pprof/cpu.out > pprof/test.svg
 
 lint: generate
