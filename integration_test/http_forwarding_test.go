@@ -76,6 +76,6 @@ func test(t *testing.T, destPort int, f func(httpClient *http.Client, srcPort in
 	}
 	defer srv2.Close(context.Background())
 
-	time.Sleep(500 * time.Millisecond) // FIXME: (hack) Await peering & advertisement
+	time.Sleep(750 * time.Millisecond) // FIXME: (hack) Await peering & advertisement
 	f(&http.Client{}, srv1IngressPort)
 }
