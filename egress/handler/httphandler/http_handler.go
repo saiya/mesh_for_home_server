@@ -85,6 +85,8 @@ func (h *httpHandler) Close(ctx context.Context) error {
 		h.sessionsLock.Lock()
 		defer h.sessionsLock.Unlock()
 		for key, sess := range h.sessions {
+			key := key
+			sess := sess
 			eg.Go(func() error {
 				return sess.Close(ctx)
 			})
@@ -96,6 +98,8 @@ func (h *httpHandler) Close(ctx context.Context) error {
 		h.egressesLock.Lock()
 		defer h.egressesLock.Unlock()
 		for key, egress := range h.egresses {
+			key := key
+			egress := egress
 			eg.Go(func() error {
 				return egress.Close(ctx)
 			})
