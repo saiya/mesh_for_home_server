@@ -24,7 +24,10 @@ func newHttpEgress(httpHandler *httpHandler, c *config.HTTPEgressConfig) *httpEg
 	dialer := &net.Dialer{}
 	c.ConfigureDialer(dialer)
 
-	httpTransport := &http.Transport{DialContext: dialer.DialContext}
+	httpTransport := &http.Transport{
+		DialContext:        dialer.DialContext,
+		DisableCompression: true,
+	}
 	c.ConfigureHTTPTransport(httpTransport)
 
 	return &httpEgress{
