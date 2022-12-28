@@ -34,7 +34,7 @@ type httpEgressSession struct {
 
 	bodyWindow messagewindow.MessageWindow[int64, interface{}] // []byte or err
 
-	replyMsgOrder atomic.Int64
+	replyMsgOrder int64
 }
 
 const httpReqBodyChunkSize = 512 * 1024
@@ -146,7 +146,7 @@ func (b *httpEgressSessionReqBody) Read(p []byte) (n int, err error) { // io.Rea
 func (sess *httpEgressSession) reply(msg *generated.HttpMessage) {
 	msg.Identity = &generated.HttpMessageIdentity{
 		RequestId: sess.ID.requestID,
-		MsgOrder:  sess.replyMsgOrder.Add(1) - 1,
+		MsgOrder:  atomic.AddInt64(&sess.replyMsgOrder, 1) - 1,
 	}
 
 	router := sess.httpHandler.router
