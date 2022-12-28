@@ -5,8 +5,8 @@ import "math/rand"
 var shortHTTPBody1a = RandomBytes(32)
 var shortHTTPBody1b = RandomBytes(32)
 
-var largeHTTPBody1a = RandomBytes(32*1024*1024 + rand.Intn(1024))
-var largeHTTPBody1b = RandomBytes(32*1024*1024 + rand.Intn(1024))
+var largeHTTPBody1a = RandomBytes(128*1024 + rand.Intn(1024))
+var largeHTTPBody1b = RandomBytes(128*1024 + rand.Intn(1024))
 
 var DefaultHTTPTestCases = []HTTPTestCase{
 	{
