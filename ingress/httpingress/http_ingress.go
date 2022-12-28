@@ -48,6 +48,11 @@ func NewHTTPIngress(
 		hserver: &http.Server{
 			Addr:    listenAddr,
 			Handler: httpHandler(config, defaultHandler),
+
+			ReadTimeout:       config.RequestTimeout.BodyTimeout(),
+			ReadHeaderTimeout: config.RequestTimeout.HeaderTimeout(),
+			WriteTimeout:      config.ResponseTimeout.BodyTimeout(),
+			IdleTimeout:       config.GetKeepAliveTimeout(),
 		},
 	}
 	if config.TLS != nil {

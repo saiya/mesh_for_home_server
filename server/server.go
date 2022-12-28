@@ -30,7 +30,7 @@ type Server struct {
 }
 
 func StartServer(config *config.ServerConfig) (*Server, error) {
-	router := router.NewRouter("")
+	router := router.NewRouter(config.Hostname)
 
 	ctx, ctxClose := context.WithCancel(context.Background())
 	peeringServers, peeringClients, err := peering.StartPeering(ctx, config.Perring, router)

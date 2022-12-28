@@ -9,10 +9,12 @@ message HttpMessage {
         HttpRequestStart http_request_start = 2;
         HttpRequestBody http_request_body = 3;
         HttpRequestEnd http_request_end = 4;
+        HttpRequestAbnormalEnd http_request_abnormal_end = 5;
 
-        HttpResponseStart http_response_start = 5;
-        HttpResponseBody http_response_body = 6;
-        HttpResponseEnd http_response_end = 7;
+        HttpResponseStart http_response_start = 10;
+        HttpResponseBody http_response_body = 11;
+        HttpResponseEnd http_response_end = 12;
+        HttpResponseAbnormalEnd http_response_abnormal_end = 13;
     }
 }
 
@@ -33,6 +35,7 @@ message HttpRequestBody {
 }
 
 message HttpRequestEnd {}
+message HttpRequestAbnormalEnd {}
 
 message HttpResponseStart {
     string status = 1; // e.g. "200 OK"
@@ -53,6 +56,8 @@ message HttpResponseBody {
 message HttpResponseEnd {
     repeated HttpHeader trailers = 1;
 }
+
+message HttpResponseAbnormalEnd {}
 
 message HttpHeader {
     string name = 1;

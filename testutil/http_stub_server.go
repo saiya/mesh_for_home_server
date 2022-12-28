@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -8,16 +9,20 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/saiya/mesh_for_home_server/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 func NewHTTPStubServer(t *testing.T, patterns ...HttpStub) (*httptest.Server, int) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logCtx := logger.Wrap(context.Background(), "uri", r.RequestURI)
+		logger.GetFrom(logCtx).Debugw("NewHTTPStubServer handling request...")
 		matcher := requestToRequestMatcher(t, r)
 
 		for _, p := range patterns {
 			if matcher.Match(t, p) {
 				p.handle(t, w, r)
+				logger.GetFrom(logCtx).Debugw("NewHTTPStubServer handled request")
 				return
 			}
 		}

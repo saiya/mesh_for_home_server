@@ -127,6 +127,25 @@ func TestOutOfOrderMessage(t *testing.T) {
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
+func TestCloseBeforeConsuming(t *testing.T) {
+	w := mw.NewMessageWindow[int, interface{}]()
+
+	assert.NoError(t, w.Send(0, nil))
+	seq, _, err := consumeWithTimeout(w, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, seq)
+
+	assert.NoError(t, w.Send(1, nil))
+	assert.NoError(t, w.Send(3, nil))
+	assert.NoError(t, w.Send(2, nil))
+	w.Close()
+	for i := 1; i <= 3; i++ {
+		seq, _, err := consumeWithTimeout(w, 0)
+		assert.NoError(t, err)
+		assert.Equal(t, i, seq)
+	}
+}
+
 func TestMultipleClose(t *testing.T) {
 	w := mw.NewMessageWindow[int, interface{}]()
 

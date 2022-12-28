@@ -46,9 +46,8 @@ func NewHTTPForwarder(router interfaces.Router) interfaces.HTTPForwarder {
 			listener := fw.listeners[listenerID]
 			fw.listenersLock.Unlock()
 
-			if listener == nil {
-				return fmt.Errorf("HTTP forwarder cannot find the in-flight request: %v", http.Identity.RequestId)
-			} else {
+			// Note: listener can be nil (e.g. this server operating both egress & ingress; this ingress forwarder won't handle egress messages)
+			if listener != nil {
 				return listener.handle(http)
 			}
 		}
@@ -80,7 +79,6 @@ func (fw *httpForwarder) newSession(headerTimeout, bodyTimeout time.Duration) *h
 		headerTimeout: headerTimeout,
 		bodyTimeout:   bodyTimeout,
 	}
-	fwc.startListener()
 	return fwc
 }
 

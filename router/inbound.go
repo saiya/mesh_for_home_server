@@ -28,7 +28,7 @@ func (b *inbound) Invoke(parentCtx context.Context, from config.NodeID, msg inte
 	for _, handler := range b.Snapshot() {
 		err := handler(ctx, from, msg)
 		if err != nil {
-			logger.GetFrom(ctx).Errorw("messagehandler returned error: %w", err)
+			logger.GetFrom(ctx).Errorf("messagehandler returned error: %w", err)
 		}
 	}
 }

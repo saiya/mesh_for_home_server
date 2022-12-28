@@ -101,13 +101,14 @@ func (r *router) Listen(callback interfaces.RouterListener) interfaces.RouterUnr
 }
 
 func (r *router) Deliver(parentCtx context.Context, from config.NodeID, dest config.NodeID, msg interfaces.Message) {
-	ctx := logger.Wrap(parentCtx, "from", from, "dest", dest, "peer-msg", interfaces.MsgLogString(msg))
+	ctx := logger.Wrap(parentCtx, "this-node", r.nodeID, "from", from, "dest", dest, "peer-msg", interfaces.MsgLogString(msg))
+	logger.GetFrom(ctx).Debugw("Routing message...")
 	if r.nodeID == dest {
 		r.inbound.Invoke(ctx, from, msg)
 	} else {
 		err := r.outbounds.Deliver(ctx, dest, msg)
 		if err != nil {
-			logger.GetFrom(ctx).Warnw("failed to deliver message", "err", err)
+			logger.GetFrom(ctx).Warnw("failed to deliver message: "+err.Error(), "err", err)
 		}
 	}
 }

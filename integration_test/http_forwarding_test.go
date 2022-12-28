@@ -30,6 +30,7 @@ func test(t *testing.T, destPort int, f func(httpClient *http.Client, srcPort in
 
 	srv1, err := server.StartServer(
 		&config.ServerConfig{
+			Hostname: "ingress",
 			Perring: &config.PeeringConfig{
 				Connect: []*config.PeeringConnectConfig{
 					{Address: fmt.Sprintf("localhost:%d", srv2PeerPort), Connections: 1},
@@ -39,7 +40,8 @@ func test(t *testing.T, destPort int, f func(httpClient *http.Client, srcPort in
 				HTTP: []config.HTTPIngressConfig{
 					{
 						Listen:          fmt.Sprintf("0.0.0.0:%d", srv1IngressPort),
-						ResponseTimeout: &config.HTTPTimeout{Header: "1s", Body: "1s"},
+						RequestTimeout:  &config.HTTPTimeout{Header: "1s", Body: "10s"},
+						ResponseTimeout: &config.HTTPTimeout{Header: "1s", Body: "10s"},
 					},
 				},
 			},
@@ -52,6 +54,7 @@ func test(t *testing.T, destPort int, f func(httpClient *http.Client, srcPort in
 
 	srv2, err := server.StartServer(
 		&config.ServerConfig{
+			Hostname: "egress",
 			Perring: &config.PeeringConfig{
 				Accept: &config.PeeringAcceptConfig{
 					Listen: fmt.Sprintf("localhost:%d", srv2PeerPort),
@@ -59,7 +62,11 @@ func test(t *testing.T, destPort int, f func(httpClient *http.Client, srcPort in
 			},
 			Egress: &config.EgressConfigs{
 				HTTP: []config.HTTPEgressConfig{
-					{Host: "*", Server: fmt.Sprintf("localhost:%d", destPort)},
+					{
+						Host: "*", Server: fmt.Sprintf("http://localhost:%d", destPort),
+						ConnectTimeout:  "1s",
+						ResponseTimeout: &config.HTTPTimeout{Header: "1s", Body: "10s"},
+					},
 				},
 			},
 		},

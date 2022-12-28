@@ -36,12 +36,12 @@ func (hrt *httpRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	ctx = logger.Wrap(ctx, "route", fwc.dest)
 	logger.GetFrom(ctx).Debugw("Started and routed HTTP request forwarding")
 
-	if err := hrt.forwardReqBody(ctx, fwc, req); err != nil {
+	err := hrt.forwardReqBody(ctx, fwc, req)
+	hrt.endOfReqBody(ctx, fwc, err) // Always send end of request, even though it terminated
+	if err != nil {
 		fwc.Close()
 		return nil, err
 	}
-
-	hrt.endOfReqBody(ctx, fwc)
 	logger.GetFrom(ctx).Debugw("Forwarded HTTP request, waiting response...")
 
 	return hrt.readResponse(ctx, fwc)
@@ -73,6 +73,7 @@ func (hrt *httpRoundTripper) startRequest(ctx context.Context, fwc *httpForwardi
 		return err
 	}
 	fwc.dest = dest
+	fwc.startListener()
 
 	hrt.router.Deliver(ctx, fwc.from, dest, msg)
 	return nil
@@ -111,17 +112,30 @@ func (hrt *httpRoundTripper) forwardReqBody(ctx context.Context, fwc *httpForwar
 	return nil
 }
 
-func (hrt *httpRoundTripper) endOfReqBody(ctx context.Context, fwc *httpForwardingSession) {
-	hrt.router.Deliver(ctx, fwc.from, fwc.dest, &generated.PeerMessage{
-		Message: &generated.PeerMessage_Http{
-			Http: &generated.HttpMessage{
-				Identity: fwc.NextMsgID(),
-				Message: &generated.HttpMessage_HttpRequestEnd{
-					HttpRequestEnd: &generated.HttpRequestEnd{},
+func (hrt *httpRoundTripper) endOfReqBody(ctx context.Context, fwc *httpForwardingSession, err error) {
+	if err != nil {
+		hrt.router.Deliver(ctx, fwc.from, fwc.dest, &generated.PeerMessage{
+			Message: &generated.PeerMessage_Http{
+				Http: &generated.HttpMessage{
+					Identity: fwc.NextMsgID(),
+					Message: &generated.HttpMessage_HttpRequestAbnormalEnd{
+						HttpRequestAbnormalEnd: &generated.HttpRequestAbnormalEnd{},
+					},
 				},
 			},
-		},
-	})
+		})
+	} else {
+		hrt.router.Deliver(ctx, fwc.from, fwc.dest, &generated.PeerMessage{
+			Message: &generated.PeerMessage_Http{
+				Http: &generated.HttpMessage{
+					Identity: fwc.NextMsgID(),
+					Message: &generated.HttpMessage_HttpRequestEnd{
+						HttpRequestEnd: &generated.HttpRequestEnd{},
+					},
+				},
+			},
+		})
+	}
 }
 
 func (hrt *httpRoundTripper) readResponse(ctx context.Context, fwc *httpForwardingSession) (*http.Response, error) {
@@ -195,6 +209,9 @@ func (this *httpResponseBodyReader) Read(p []byte) (n int, err error) {
 
 		this.res.Trailer = proto.ToHTTPHeaders(end.Trailers)
 		return 0, io.EOF
+	} else if end := msg.GetHttpResponseAbnormalEnd(); end != nil {
+		defer this.fwc.Close()
+		return 0, fmt.Errorf("Unexpected response termination from remote peer")
 	} else {
 		return 0, fmt.Errorf("Unexpected message from peer while reading HTTP response: %v", msg.Message)
 	}

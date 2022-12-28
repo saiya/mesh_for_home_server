@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/saiya/mesh_for_home_server/logger"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 )
@@ -32,7 +33,11 @@ type HttpStubOptions struct {
 }
 
 func (p *HttpStub) String() string {
-	return fmt.Sprintf("%s %s ? %v", p.Method, p.Path, p.QueryParams)
+	reqBodyLen := 0
+	if p.RequestBody != nil {
+		reqBodyLen = len(*p.RequestBody)
+	}
+	return fmt.Sprintf("%s %s ? %v (reqBody: %d bytes)", p.Method, p.Path, p.QueryParams, reqBodyLen)
 }
 
 type requestMatcher struct {
@@ -41,11 +46,13 @@ type requestMatcher struct {
 }
 
 func (req *requestMatcher) String() string {
-	return fmt.Sprintf("%s %s", req.r.Method, req.r.RequestURI)
+	return fmt.Sprintf("%s %s (body: %d bytes)", req.r.Method, req.r.RequestURI, len(req.body))
 }
 
 func requestToRequestMatcher(t *testing.T, r *http.Request) requestMatcher {
+	logger.Get().Debugw("Stub HTTP server reading request body...")
 	bodyBytes, err := io.ReadAll(r.Body)
+	logger.Get().Debugw("Stub HTTP server read request body", "bodyBytes", len(bodyBytes), "err", err)
 	assert.NoError(t, err)
 
 	return requestMatcher{r, bodyBytes}

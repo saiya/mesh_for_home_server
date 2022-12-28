@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
+	"github.com/saiya/mesh_for_home_server/logger"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 )
@@ -33,7 +35,7 @@ func (c *HttpTestCase) String() string {
 		bodyBytes = len(*c.RequestBody)
 	}
 
-	return fmt.Sprintf("%s %s (body: %d bytes)", c.Method, c.Path, bodyBytes)
+	return fmt.Sprintf("%s_%s_body%d", c.Method, strings.ReplaceAll(c.Path, "/", "_"), bodyBytes)
 }
 
 func (c *HttpTestCase) Do(t *testing.T, httpClient *http.Client, port int) {
@@ -74,7 +76,9 @@ func (c *HttpTestCase) AssertResponse(t *testing.T, res *http.Response) {
 		}
 	}
 
+	logger.Get().Debugw("Reading HTTP client's response body...")
 	resBody, err := io.ReadAll(res.Body)
+	logger.Get().Debugw("Read HTTP client's", "resBody", len(resBody), "err", err)
 	assert.NoError(t, err)
 	if c.ExpectedBody == nil {
 		assert.Equal(t, 0, len(resBody))

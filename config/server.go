@@ -8,6 +8,8 @@ import (
 )
 
 type ServerConfig struct {
+	Hostname string `json:"hostname" yaml:"hostname"` // = prefix of NodeID
+
 	Perring *PeeringConfig  `json:"peering" yaml:"peering"`
 	Ingress *IngressConfigs `json:"ingress" yaml:"ingress"`
 	Egress  *EgressConfigs  `json:"egress" yaml:"egress"`
