@@ -10,6 +10,7 @@ import (
 
 	"github.com/saiya/mesh_for_home_server/config"
 	"github.com/saiya/mesh_for_home_server/interfaces"
+	"github.com/saiya/mesh_for_home_server/logger"
 	"github.com/saiya/mesh_for_home_server/peering/messagewindow"
 	"github.com/saiya/mesh_for_home_server/peering/proto/generated"
 	"golang.org/x/exp/maps"
@@ -117,24 +118,30 @@ type httpForwardingSession struct {
 
 	headerTimeout time.Duration
 	bodyTimeout   time.Duration
+
+	reaperLock        sync.Mutex
+	reaperTimer       *time.Timer
+	reaperTimerClosed chan struct{}
 }
 
 // Close completely this session.
 // This method make sure all resources of this session to be freed.
 func (fwc *httpForwardingSession) Close() {
+	fwc.stopReaper(false)
 	fwc.msgWindow.Close()
 	fwc.fw.removeListener(fwc)
 }
 
 func (fwc *httpForwardingSession) startListener() {
 	fwc.fw.addListener(fwc)
-	// TODO: Run session reaper, to forcibly close abandoned session
+	fwc.resetReaper(fwc.headerTimeout)
 }
 
 func (fwc *httpForwardingSession) handle(msg *generated.HttpMessage) error {
 	if err := fwc.msgWindow.Send(msg.Identity.MsgOrder, msg); err != nil {
 		return fmt.Errorf("failed to handle HTTP message from peer: %v", err)
 	}
+	fwc.resetReaper(fwc.bodyTimeout)
 	return nil
 }
 
@@ -146,4 +153,40 @@ func (fwc *httpForwardingSession) NextMsgID() *generated.HttpMessageIdentity {
 	}
 	fwc.msgOrder++
 	return id
+}
+
+func (fwc *httpForwardingSession) stopReaper(alreadyLocked bool) {
+	if !alreadyLocked {
+		fwc.reaperLock.Lock()
+		defer fwc.reaperLock.Unlock()
+	}
+
+	if fwc.reaperTimer != nil {
+		fwc.reaperTimer.Stop()
+		fwc.reaperTimer = nil
+
+		close(fwc.reaperTimerClosed)
+		fwc.reaperTimerClosed = nil
+	}
+}
+
+func (fwc *httpForwardingSession) resetReaper(timeout time.Duration) {
+	fwc.reaperLock.Lock()
+	defer fwc.reaperLock.Unlock()
+
+	fwc.stopReaper(true)
+
+	timer := time.NewTimer(timeout)
+	fwc.reaperTimer = timer
+	closed := make(chan struct{})
+	fwc.reaperTimerClosed = closed
+	go func() {
+		select {
+		case <-closed:
+			return
+		case <-timer.C:
+			logger.Get().Warnw("HTTP forwarder timeout, terminating session forcibly", "req-id", fwc.reqID)
+			fwc.Close() // Internally locks reaperLock again, but won't cause deadlock because this goroutine don't have the lock
+		}
+	}()
 }
