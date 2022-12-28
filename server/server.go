@@ -22,9 +22,9 @@ type Server struct {
 	//
 
 	router         interfaces.Router
+	egressHandlers []interfaces.MessageHandler
 	peeringServers []interfaces.PeeringServer
 	peeringClients []interfaces.PeeringClient
-	egressHandlers []interfaces.MessageHandler
 	forwarders     []interfaces.Forwarder
 	ingresses      []interfaces.Ingress
 }
@@ -33,11 +33,6 @@ func StartServer(config *config.ServerConfig) (*Server, error) {
 	router := router.NewRouter(config.Hostname)
 
 	ctx, ctxClose := context.WithCancel(context.Background())
-	peeringServers, peeringClients, err := peering.StartPeering(ctx, config.Perring, router)
-	if err != nil {
-		ctxClose()
-		return nil, fmt.Errorf("failed to initialize ingress: %w", err)
-	}
 
 	advFn, egressHandlers, err := egress.StartEgress(config.Egress, router)
 	if err != nil {
@@ -45,6 +40,12 @@ func StartServer(config *config.ServerConfig) (*Server, error) {
 		return nil, fmt.Errorf("failed to initialize egress: %w", err)
 	}
 	router.SetAdvertisementProvider(advFn)
+
+	peeringServers, peeringClients, err := peering.StartPeering(ctx, config.Perring, router)
+	if err != nil {
+		ctxClose()
+		return nil, fmt.Errorf("failed to initialize ingress: %w", err)
+	}
 
 	ingresses, forwarders, err := ingress.StartIngress(config.Ingress, router)
 	if err != nil {
@@ -56,9 +57,9 @@ func StartServer(config *config.ServerConfig) (*Server, error) {
 		ctx: ctx, ctxClose: ctxClose,
 
 		router:         router,
+		egressHandlers: egressHandlers,
 		peeringServers: peeringServers,
 		peeringClients: peeringClients,
-		egressHandlers: egressHandlers,
 		forwarders:     forwarders,
 		ingresses:      ingresses,
 	}, nil
@@ -80,14 +81,14 @@ func (srv *Server) Close(ctx context.Context) {
 		catch(forwarder.Close(ctx))
 	}
 	catch(srv.router.Close(ctx))
-	for _, egressHandler := range srv.egressHandlers {
-		catch(egressHandler.Close(ctx))
-	}
 	for _, peeringClient := range srv.peeringClients {
 		catch(peeringClient.Close(ctx))
 	}
 	for _, peeringServer := range srv.peeringServers {
 		catch(peeringServer.Close(ctx))
+	}
+	for _, egressHandler := range srv.egressHandlers {
+		catch(egressHandler.Close(ctx))
 	}
 }
 
