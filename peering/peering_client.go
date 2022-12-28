@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -96,11 +97,16 @@ func (c *peeringClientConnection) peering() error {
 	logger.GetFrom(ctx).Debugw("Establishing peering connection...")
 
 	atomic.AddUint64(&c.stat.PeeringAttempts, 1)
+	var connSendLock sync.Mutex
 	conn, err := generated.NewPeeringClient(c.client.gc).Peer(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { debugLogIfErr(ctx, conn.CloseSend()) }()
+	defer func() {
+		connSendLock.Lock()
+		defer connSendLock.Unlock()
+		debugLogIfErr(ctx, conn.CloseSend())
+	}()
 	atomic.AddUint64(&c.stat.PeeringConnected, 1)
 	ctx = withConnectionLogAttributes(conn.Context())
 
@@ -118,6 +124,9 @@ func (c *peeringClientConnection) peering() error {
 	sinkLoggingCtx := ctx
 	deregisterShink := c.router.RegisterSink(handShakeResult.peerNodeID, func(ctx context.Context, msg interfaces.Message) error {
 		logger.GetFrom(sinkLoggingCtx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))
+
+		connSendLock.Lock()
+		defer connSendLock.Unlock()
 		return conn.Send(&generated.PeerClientMessage{
 			Message: &generated.PeerClientMessage_PeerMessage{
 				PeerMessage: msg,
