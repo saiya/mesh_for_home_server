@@ -114,7 +114,7 @@ func (c *peeringClientConnection) peering() error {
 	logger.GetFrom(ctx).Debugw("Handshake done", "node", handShakeResult.peerNodeID)
 
 	// FIXME: This code sending same message over ALL peering connections (= sending duplicated message)
-	// Should implement living-conection list and round-robin
+	// Should implement living-connection list and round-robin
 	sinkLoggingCtx := ctx
 	deregisterShink := c.router.RegisterSink(handShakeResult.peerNodeID, func(ctx context.Context, msg interfaces.Message) error {
 		logger.GetFrom(sinkLoggingCtx).Debugw("Sending peer message", "peer-msg", interfaces.MsgLogString(msg))

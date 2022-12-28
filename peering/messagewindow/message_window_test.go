@@ -226,10 +226,9 @@ func consumeAll(w mw.MessageWindow[int, msg]) chan consumerResult {
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return
-				} else {
-					anomaries["consumer encountered error"] = err
-					continue
 				}
+				anomaries["consumer encountered error"] = err
+				continue
 			}
 			if seq != msg.seq {
 				anomaries["consumer found sequence unmatch"] = fmt.Sprintf("{ seq=%d, msg=%s }", seq, msg.String())

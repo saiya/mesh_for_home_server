@@ -11,7 +11,6 @@ type Message = *generated.PeerMessage
 func MsgLogString(msg Message) string {
 	if http := msg.GetHttp(); http != nil {
 		return reflect.TypeOf(msg.GetHttp().Message).String()
-	} else {
-		return reflect.TypeOf(msg.Message).String()
 	}
+	return reflect.TypeOf(msg.Message).String()
 }

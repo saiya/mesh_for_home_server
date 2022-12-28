@@ -18,12 +18,12 @@ type RouteTable interface {
 }
 
 type routeTable struct {
-	http *httpRT
+	http *HTTPRoutingTable
 }
 
 func NewRouteTable() RouteTable {
 	return &routeTable{
-		http: NewHTTPRT(),
+		http: NewHTTPRoutingTable(),
 	}
 }
 

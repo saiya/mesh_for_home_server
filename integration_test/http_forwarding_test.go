@@ -14,11 +14,11 @@ import (
 )
 
 func TestRequests(t *testing.T) {
-	httpServer, destPort := util.NewHTTPStubServer(t, util.DEFAULT_HTTP_STUBS...)
+	httpServer, destPort := util.NewHTTPStubServer(t, util.DefaultHTTPStubs...)
 	defer httpServer.Close()
 
 	test(t, destPort, func(httpClient *http.Client, srcPort int) {
-		for _, c := range util.DEFAULT_HTTP_TEST_CASES {
+		for _, c := range util.DefaultHTTPTestCases {
 			t.Run(c.String(), func(t *testing.T) { c.Do(t, httpClient, srcPort) })
 		}
 	})

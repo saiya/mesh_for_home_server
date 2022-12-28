@@ -18,7 +18,7 @@ import (
 
 type httpEgressSessionID struct {
 	peer      config.NodeID
-	requestId int64
+	requestID int64
 }
 
 type httpEgressSession struct {
@@ -31,7 +31,6 @@ type httpEgressSession struct {
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	req       *http.Request
-	res       *http.Response
 
 	bodyWindow messagewindow.MessageWindow[int64, interface{}] // []byte or err
 
@@ -40,13 +39,13 @@ type httpEgressSession struct {
 
 const httpReqBodyChunkSize = 512 * 1024
 
-func newHttpEgressSession(ctx context.Context, h *httpEgress, req *generated.HttpRequestStart, id httpEgressSessionID) (*httpEgressSession, error) {
+func newHTTPEgressSession(ctx context.Context, h *httpEgress, req *generated.HttpRequestStart, id httpEgressSessionID) (*httpEgressSession, error) {
 	url, err := url.Parse(fmt.Sprintf("%s%s", h.server, req.Path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse URL to forward HTTP request: %v", err)
 	}
 
-	ctx, ctxCancel := context.WithCancel(logger.Wrap(ctx, "url", url, "hostname", req.Hostname, "request-id", id.requestId))
+	ctx, ctxCancel := context.WithCancel(logger.Wrap(ctx, "url", url, "hostname", req.Hostname, "request-id", id.requestID))
 	sess := &httpEgressSession{
 		httpHandler:     h.httpHandler,
 		egress:          h,
@@ -78,8 +77,13 @@ func (sess *httpEgressSession) start() {
 	go func() {
 		logger.GetFrom(sess.ctx).Debugw("fowarding egress HTTP request...")
 		res, err := sess.egress.httpClient.Do(sess.req)
-		if res != nil && res.Body != nil {
-			defer res.Body.Close() // Even on error, should close this
+		if res != nil && res.Body != nil { // Even on error, should close response body
+			defer func() {
+				err := res.Body.Close()
+				if err != nil {
+					logger.GetFrom(sess.ctx).Debugf("failed to close response body: %w", err)
+				}
+			}()
 		}
 		if err != nil {
 			sess.handleRequestFailure(err)
@@ -92,15 +96,14 @@ func (sess *httpEgressSession) start() {
 func (sess *httpEgressSession) handle(ctx context.Context, msg *generated.HttpMessage) error {
 	logger.GetFrom(ctx).Debugw("Handling HTTP egress message")
 	if body := msg.GetHttpRequestBody(); body != nil {
-		sess.bodyWindow.Send(msg.Identity.MsgOrder-1, body.Data)
-		return nil
+		return sess.bodyWindow.Send(msg.Identity.MsgOrder-1, body.Data)
 	} else if end := msg.GetHttpRequestEnd(); end != nil {
 		sess.bodyWindow.Close()
 		return nil
 	} else if end := msg.GetHttpRequestAbnormalEnd(); end != nil {
-		sess.bodyWindow.Send(msg.Identity.MsgOrder-1, fmt.Errorf("remote peer terminated HTTP request"))
-		sess.bodyWindow.Close()
-		return nil
+		err := sess.bodyWindow.Send(msg.Identity.MsgOrder-1, fmt.Errorf("remote peer terminated HTTP request"))
+		sess.bodyWindow.Close() // Anyway we should close window to notify end of request
+		return err
 	} else {
 		return fmt.Errorf("HTTP egress forwarder encountered unexpected message: %v", msg.Message)
 	}
@@ -136,15 +139,13 @@ func (b *httpEgressSessionReqBody) Read(p []byte) (n int, err error) { // io.Rea
 		copied := copy(p, body)
 		b.bufferedBody = body[copied:]
 		return copied, nil
-	} else {
-		err := msg.(error)
-		return 0, err
 	}
+	return 0, msg.(error)
 }
 
 func (sess *httpEgressSession) reply(msg *generated.HttpMessage) {
 	msg.Identity = &generated.HttpMessageIdentity{
-		RequestId: sess.ID.requestId,
+		RequestId: sess.ID.requestID,
 		MsgOrder:  sess.replyMsgOrder.Add(1) - 1,
 	}
 

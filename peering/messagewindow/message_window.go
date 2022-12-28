@@ -9,9 +9,10 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+// ErrClosedMessageWindow is an error that senders oberve if window have been closed.
 var ErrClosedMessageWindow = errors.New("Message window have been closed")
 
-// MessageWindow is an object that bridge incoming messages to a consumer, with folowing guarantees:
+// MessageWindow is an object that bridge incoming messages to a consumer, with following guarantees:
 // - Message sender won't be blocked always
 // - Consumer will observe sorted message sequence
 type MessageWindow[S constraints.Integer, T any] interface {
@@ -64,12 +65,6 @@ func (w *messageWindowImpl[S, T]) Close() {
 
 	w.closed = io.EOF
 	close(w.notify)
-}
-
-func (w *messageWindowImpl[S, T]) getClosed() error {
-	w.lock.Lock()
-	defer w.lock.Unlock()
-	return w.closed
 }
 
 func (w *messageWindowImpl[S, T]) Send(sequence S, msg T) error {

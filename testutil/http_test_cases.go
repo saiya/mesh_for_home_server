@@ -2,50 +2,50 @@ package testutil
 
 import "math/rand"
 
-var shortHttpBody1a = RandomBytes(32)
-var shortHttpBody1b = RandomBytes(32)
+var shortHTTPBody1a = RandomBytes(32)
+var shortHTTPBody1b = RandomBytes(32)
 
-var largeHttpBody1a = RandomBytes(32*1024*1024 + rand.Intn(1024))
-var largeHttpBody1b = RandomBytes(32*1024*1024 + rand.Intn(1024))
+var largeHTTPBody1a = RandomBytes(32*1024*1024 + rand.Intn(1024))
+var largeHTTPBody1b = RandomBytes(32*1024*1024 + rand.Intn(1024))
 
-var DEFAULT_HTTP_TEST_CASES = []HttpTestCase{
+var DefaultHTTPTestCases = []HTTPTestCase{
 	{
 		"GET", "/get?param1=a&param2=日本語",
 		nil, nil,
 		201, nil, nil,
-		HttpTestCaseOptions{},
+		HTTPTestCaseOptions{},
 	},
 	{
 		"POST", "/post",
-		map[string][]string{"Test-Req-Header": {"test1", "test2"}, "Test-Req-Header2": {"foo; bar"}}, &shortHttpBody1a,
-		200, map[string][]string{"Test-Res-Header": {"test1", "test2"}, "Test-Res-Header2": {"foo; bar"}}, &shortHttpBody1b,
-		HttpTestCaseOptions{},
+		map[string][]string{"Test-Req-Header": {"test1", "test2"}, "Test-Req-Header2": {"foo; bar"}}, &shortHTTPBody1a,
+		200, map[string][]string{"Test-Res-Header": {"test1", "test2"}, "Test-Res-Header2": {"foo; bar"}}, &shortHTTPBody1b,
+		HTTPTestCaseOptions{},
 	},
 	{
 		"POST", "/post/large",
-		nil, &largeHttpBody1a,
-		200, nil, &largeHttpBody1b,
-		HttpTestCaseOptions{},
+		nil, &largeHTTPBody1a,
+		200, nil, &largeHTTPBody1b,
+		HTTPTestCaseOptions{},
 	},
 }
 
-var DEFAULT_HTTP_STUBS = []HttpStub{
+var DefaultHTTPStubs = []HTTPStub{
 	{
 		"GET", "/get", map[string]string{"param1": "a", "param2": "日本語"},
 		nil, nil,
 		201, nil, nil,
-		HttpStubOptions{},
+		HTTPStubOptions{},
 	},
 	{
 		"POST", "/post", nil,
-		map[string][]string{"Test-Req-Header": {"test1", "test2"}, "Test-Req-Header2": {"foo; bar"}}, &shortHttpBody1a,
-		200, map[string][]string{"Test-Res-Header": {"test1", "test2"}, "Test-Res-Header2": {"foo; bar"}}, &shortHttpBody1b,
-		HttpStubOptions{},
+		map[string][]string{"Test-Req-Header": {"test1", "test2"}, "Test-Req-Header2": {"foo; bar"}}, &shortHTTPBody1a,
+		200, map[string][]string{"Test-Res-Header": {"test1", "test2"}, "Test-Res-Header2": {"foo; bar"}}, &shortHTTPBody1b,
+		HTTPStubOptions{},
 	},
 	{
 		"POST", "/post/large", nil,
-		nil, &largeHttpBody1a,
-		200, nil, &largeHttpBody1b,
-		HttpStubOptions{ChunkResponseBodyPer: 1024},
+		nil, &largeHTTPBody1a,
+		200, nil, &largeHTTPBody1b,
+		HTTPStubOptions{ChunkResponseBodyPer: 1024},
 	},
 }

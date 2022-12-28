@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func NewHTTPStubServer(t *testing.T, patterns ...HttpStub) (*httptest.Server, int) {
+func NewHTTPStubServer(t *testing.T, patterns ...HTTPStub) (*httptest.Server, int) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logCtx := logger.Wrap(context.Background(), "uri", r.RequestURI)
 		logger.GetFrom(logCtx).Debugw("NewHTTPStubServer handling request...")
@@ -46,7 +46,7 @@ func NewHTTPStubServer(t *testing.T, patterns ...HttpStub) (*httptest.Server, in
 	return srv, port
 }
 
-func (p *HttpStub) handle(t *testing.T, w http.ResponseWriter, r *http.Request) {
+func (p *HTTPStub) handle(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	if p.ResponseHeaders != nil {
 		for k, v := range p.ResponseHeaders {
 			w.Header()[k] = v

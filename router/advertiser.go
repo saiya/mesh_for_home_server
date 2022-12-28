@@ -75,5 +75,5 @@ func (av *advertiser) advertise(ctx context.Context) time.Time {
 	if err != nil {
 		logger.GetFrom(ctx).Infow("Failed to advertise to some peers (connection down?): "+err.Error(), "err", err)
 	}
-	return time.Unix(packet.ExpireAt, 0).Add(-config.AdvertiseTtlMargin)
+	return time.Unix(packet.ExpireAt, 0).Add(-config.AdvertiseTTLMargin)
 }

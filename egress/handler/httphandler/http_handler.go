@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type HttpHandler interface {
+type HTTPHandler interface {
 	interfaces.MessageHandler
 	AddEgress(c *config.HTTPEgressConfig) error
 	Advertise() *generated.HttpAdvertisement
@@ -28,7 +28,7 @@ type httpHandler struct {
 	sessions     map[httpEgressSessionID]*httpEgressSession
 }
 
-func NewHttpHandler(router interfaces.Router) HttpHandler {
+func NewHTTPHandler(router interfaces.Router) HTTPHandler {
 	h := &httpHandler{
 		router:   router,
 		egresses: make(map[string]*httpEgress),
@@ -40,7 +40,7 @@ func NewHttpHandler(router interfaces.Router) HttpHandler {
 			return nil
 		}
 		sessID := httpEgressSessionID{from, http.Identity.RequestId}
-		ctx = logger.Wrap(ctx, "peer", sessID.peer, "request-id", sessID.requestId)
+		ctx = logger.Wrap(ctx, "peer", sessID.peer, "request-id", sessID.requestID)
 
 		if req := http.GetHttpRequestStart(); req != nil {
 			egress := h.findEgress(req)
@@ -48,12 +48,12 @@ func NewHttpHandler(router interfaces.Router) HttpHandler {
 				return fmt.Errorf("no egress found to handle incoming request (host: %s)", req.Hostname)
 			}
 
-			sess, err := newHttpEgressSession(ctx, egress, req, sessID)
+			sess, err := newHTTPEgressSession(ctx, egress, req, sessID)
 			if err != nil {
 				return fmt.Errorf("failed to start HTTP egress request (host: %s): %v", req.Hostname, err)
 			}
 
-			// Immediately register the session, to properly handle suceeding messages
+			// Immediately register the session, to properly handle succeeding messages
 			h.sessionsLock.Lock()
 			h.sessions[sessID] = sess
 			h.sessionsLock.Unlock()
@@ -61,18 +61,17 @@ func NewHttpHandler(router interfaces.Router) HttpHandler {
 
 			sess.start()
 			return nil
-		} else {
-			h.sessionsLock.RLock()
-			sess := h.sessions[sessID]
-			defer h.sessionsLock.RUnlock()
-
-			if sess == nil {
-				// Because other message (e.g. HTTP ingress's message) can come, this case can happen even in normal case
-				return nil
-			} else {
-				return sess.handle(ctx, http)
-			}
 		}
+
+		h.sessionsLock.RLock()
+		sess := h.sessions[sessID]
+		defer h.sessionsLock.RUnlock()
+
+		if sess == nil {
+			// Because other message (e.g. HTTP ingress's message) can come, this case can happen even in normal case
+			return nil
+		}
+		return sess.handle(ctx, http)
 	})
 	return h
 }
@@ -129,7 +128,7 @@ func (h *httpHandler) AddEgress(c *config.HTTPEgressConfig) error {
 		return fmt.Errorf("HTTP egress for hostname pattern \"%s\" already exists. Could not register duplicated egress", c.Host)
 	}
 
-	egress := newHttpEgress(h, c)
+	egress := newHTTPEgress(h, c)
 	h.egresses[c.Host] = egress
 	return nil
 }
@@ -152,7 +151,7 @@ func (h *httpHandler) findEgress(req *generated.HttpRequestStart) *httpEgress {
 
 // forgetSession won't close session itself, just remove it from look up table
 func (h *httpHandler) forgetSession(sessID httpEgressSessionID) {
-	logger.Get().Debugw("Removing HTTP egress session", "peer", sessID.peer, "request-id", sessID.requestId)
+	logger.Get().Debugw("Removing HTTP egress session", "peer", sessID.peer, "request-id", sessID.requestID)
 
 	h.sessionsLock.Lock()
 	defer h.sessionsLock.Unlock()

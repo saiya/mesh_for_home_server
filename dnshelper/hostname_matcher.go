@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// hostnameMatcher generate matcher function
+// HostnameMatcher generate matcher function
 // Matcher returns positive int or 0 represents priority if matched.
 // If not match, matcher returns minus value.
 func HostnameMatcher(matcher string) func(string) int64 {

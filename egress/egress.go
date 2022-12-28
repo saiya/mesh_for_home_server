@@ -13,7 +13,7 @@ import (
 )
 
 func StartEgress(c *config.EgressConfigs, router interfaces.Router) (interfaces.AdvertisementProvider, []interfaces.MessageHandler, error) {
-	httpHandler := httphandler.NewHttpHandler(router)
+	httpHandler := httphandler.NewHTTPHandler(router)
 	handlers := []interfaces.MessageHandler{
 		handler.NewPingHandler(router),
 		httpHandler,
@@ -44,7 +44,7 @@ func newADExpireFunc(c *config.EgressConfigs) func() time.Time {
 	if c != nil && c.AdvertiseIntervalSec > 0 {
 		ttl = time.Duration(c.AdvertiseIntervalSec) * time.Second
 	}
-	ttl += config.AdvertiseTtlMargin
+	ttl += config.AdvertiseTTLMargin
 
 	return func() time.Time {
 		return time.Now().Add(ttl)

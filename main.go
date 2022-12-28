@@ -41,7 +41,9 @@ func mainImpl() error {
 	if err != nil {
 		return fmt.Errorf("invalid configuration file: %w", err)
 	}
-	cfgInput.Close()
+	if err := cfgInput.Close(); err != nil {
+		logger.Get().Warnf("cannot close configuration file: %w", err)
+	}
 
 	srv, err := server.StartServer(cfg)
 	if err != nil {

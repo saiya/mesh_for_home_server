@@ -175,42 +175,41 @@ type httpResponseBodyReader struct {
 	bufferedBody []byte
 }
 
-func (this *httpResponseBodyReader) Close() error {
-	this.fwc.Close()
+func (br *httpResponseBodyReader) Close() error {
+	br.fwc.Close()
 	return nil
 }
 
-func (this *httpResponseBodyReader) Read(p []byte) (n int, err error) {
-	if len(this.bufferedBody) > 0 {
-		copied := copy(p, this.bufferedBody)
-		this.bufferedBody = this.bufferedBody[copied:]
+func (br *httpResponseBodyReader) Read(p []byte) (n int, err error) {
+	if len(br.bufferedBody) > 0 {
+		copied := copy(p, br.bufferedBody)
+		br.bufferedBody = br.bufferedBody[copied:]
 		return copied, nil
 	}
 
-	ctx := this.ctx
+	ctx := br.ctx
 
-	consumeCtx, consumeCancel := context.WithTimeout(ctx, this.hrt.bodyTimeout)
-	_, msg, err := this.fwc.msgWindow.Consume(consumeCtx)
+	consumeCtx, consumeCancel := context.WithTimeout(ctx, br.hrt.bodyTimeout)
+	_, msg, err := br.fwc.msgWindow.Consume(consumeCtx)
 	consumeCancel()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return 0, fmt.Errorf("Unexpected end-of-message-sequence (missing HttpResponseEnd message) from peer")
-		} else {
-			return 0, fmt.Errorf("Failed to await/read HTTP response body or end from peer: %v", err)
 		}
+		return 0, fmt.Errorf("Failed to await/read HTTP response body or end from peer: %v", err)
 	}
 
 	if body := msg.GetHttpResponseBody(); body != nil {
 		copied := copy(p, body.Data)
-		this.bufferedBody = body.Data[copied:]
+		br.bufferedBody = body.Data[copied:]
 		return copied, nil
 	} else if end := msg.GetHttpResponseEnd(); end != nil {
-		defer this.fwc.Close()
+		defer br.fwc.Close()
 
-		this.res.Trailer = proto.ToHTTPHeaders(end.Trailers)
+		br.res.Trailer = proto.ToHTTPHeaders(end.Trailers)
 		return 0, io.EOF
 	} else if end := msg.GetHttpResponseAbnormalEnd(); end != nil {
-		defer this.fwc.Close()
+		defer br.fwc.Close()
 		return 0, fmt.Errorf("Unexpected response termination from remote peer")
 	} else {
 		return 0, fmt.Errorf("Unexpected message from peer while reading HTTP response: %v", msg.Message)

@@ -57,8 +57,7 @@ func RootCAs() *x509.CertPool {
 
 var serverCertSerialNumber = big.NewInt(1)
 
-// ref: https://go.dev/src/crypto/tls/generate_cert.go
-func GenerateServerCert(hostname string) *config.TLSServerConfig {
+func GenerateServerCert(hostname string) *config.TLSServerConfig { // ref: https://go.dev/src/crypto/tls/generate_cert.go
 	c := config.TLSServerConfig{}
 
 	serverCertSerialNumber.Add(serverCertSerialNumber, big.NewInt(1))

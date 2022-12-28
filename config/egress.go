@@ -9,4 +9,4 @@ type EgressConfigs struct {
 }
 
 const AdvertiseIntervalDefault = 15 * time.Second
-const AdvertiseTtlMargin = 10 * time.Second
+const AdvertiseTTLMargin = 10 * time.Second

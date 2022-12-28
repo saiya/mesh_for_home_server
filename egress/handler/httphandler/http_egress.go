@@ -20,7 +20,7 @@ type httpEgress struct {
 	httpClient *http.Client
 }
 
-func newHttpEgress(httpHandler *httpHandler, c *config.HTTPEgressConfig) *httpEgress {
+func newHTTPEgress(httpHandler *httpHandler, c *config.HTTPEgressConfig) *httpEgress {
 	dialer := &net.Dialer{}
 	c.ConfigureDialer(dialer)
 

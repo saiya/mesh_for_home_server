@@ -13,7 +13,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type HttpTestCase struct {
+type HTTPTestCase struct {
 	Method         string
 	Path           string
 	RequestHeaders map[string][]string
@@ -23,13 +23,13 @@ type HttpTestCase struct {
 	ExpectedHeaders map[string][]string
 	ExpectedBody    *[]byte
 
-	Options HttpTestCaseOptions
+	Options HTTPTestCaseOptions
 }
 
-// Options that usually not need to set
-type HttpTestCaseOptions struct{}
+// HTTPTestCaseOptions is an options that usually not need to set
+type HTTPTestCaseOptions struct{}
 
-func (c *HttpTestCase) String() string {
+func (c *HTTPTestCase) String() string {
 	bodyBytes := -1
 	if c.RequestBody != nil {
 		bodyBytes = len(*c.RequestBody)
@@ -38,7 +38,7 @@ func (c *HttpTestCase) String() string {
 	return fmt.Sprintf("%s_%s_body%d", c.Method, strings.ReplaceAll(c.Path, "/", "_"), bodyBytes)
 }
 
-func (c *HttpTestCase) Do(t *testing.T, httpClient *http.Client, port int) {
+func (c *HTTPTestCase) Do(t *testing.T, httpClient *http.Client, port int) {
 	res, err := httpClient.Do(c.ToRequest(t, port))
 	if !assert.NoError(t, err) {
 		return
@@ -46,7 +46,7 @@ func (c *HttpTestCase) Do(t *testing.T, httpClient *http.Client, port int) {
 	c.AssertResponse(t, res)
 }
 
-func (c *HttpTestCase) ToRequest(t *testing.T, port int) *http.Request {
+func (c *HTTPTestCase) ToRequest(t *testing.T, port int) *http.Request {
 	var reqBody io.Reader
 	if c.RequestBody != nil {
 		reqBody = bytes.NewReader(*c.RequestBody)
@@ -65,7 +65,7 @@ func (c *HttpTestCase) ToRequest(t *testing.T, port int) *http.Request {
 	return req
 }
 
-func (c *HttpTestCase) AssertResponse(t *testing.T, res *http.Response) {
+func (c *HTTPTestCase) AssertResponse(t *testing.T, res *http.Response) {
 	if !assert.Equal(t, c.ExpectedStatus, res.StatusCode) {
 		return
 	}

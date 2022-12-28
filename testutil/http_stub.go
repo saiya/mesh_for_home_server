@@ -12,7 +12,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type HttpStub struct {
+type HTTPStub struct {
 	Method         string
 	Path           string
 	QueryParams    map[string]string
@@ -23,16 +23,16 @@ type HttpStub struct {
 	ResponseHeaders map[string][]string
 	ResponseBody    *[]byte
 
-	Options HttpStubOptions
+	Options HTTPStubOptions
 }
 
-// Options that usually not need to set
-type HttpStubOptions struct {
+// HTTPStubOptions is an options that usually not need to set
+type HTTPStubOptions struct {
 	// If not zero, chunk response body per this bytes
 	ChunkResponseBodyPer int
 }
 
-func (p *HttpStub) String() string {
+func (p *HTTPStub) String() string {
 	reqBodyLen := 0
 	if p.RequestBody != nil {
 		reqBodyLen = len(*p.RequestBody)
@@ -58,7 +58,7 @@ func requestToRequestMatcher(t *testing.T, r *http.Request) requestMatcher {
 	return requestMatcher{r, bodyBytes}
 }
 
-func (req *requestMatcher) Match(t *testing.T, p HttpStub) bool {
+func (req *requestMatcher) Match(t *testing.T, p HTTPStub) bool {
 	r := req.r
 
 	if !strings.EqualFold(p.Method, r.Method) {
